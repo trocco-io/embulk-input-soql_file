@@ -1,0 +1,1 @@
+# embulk-input-soql
