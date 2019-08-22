@@ -5,7 +5,7 @@ TODO: Write short description here and embulk-input-soql.gemspec file.
 ## Overview
 
 * **Plugin type**: input
-* **Resume supported**: no
+* **Resume supported**: yes
 * **Cleanup supported**: no
 * **Guess supported**: yes
 
