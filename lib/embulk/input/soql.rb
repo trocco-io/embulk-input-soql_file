@@ -22,11 +22,16 @@ module Embulk
       end
 
       def self.guess(config)
+        Embulk.logger.info "Start to guess process"
         task = generate_task(config)
         client = restforce_cli(task)
         soql = generate_soql(task)
-        results = client.query("#{soql} LIMIT #{MAX_GUESS_RECORDS_NUM}")
-        schema = Guess::SchemaGuess.from_hash_records(results.map(&:attrs))
+        begin
+          records = client.query("#{soql} LIMIT #{MAX_GUESS_RECORDS_NUM}")
+        rescue StandardError => e
+          raise DataError.new(e)
+        end
+        schema = Guess::SchemaGuess.from_hash_records(records.map(&:attrs))
         { 'columns' => schema }
       end
 
@@ -37,11 +42,15 @@ module Embulk
       end
 
       def run
-        results = @client.query(@soql)
-        Embulk.logger.info "Start to add records...(total #{results.count} records)"
+        begin
+          records = @client.query(@soql)
+        rescue StandardError => e
+          raise DataError.new(e)
+        end
+        Embulk.logger.info "Start to add records...(total #{records.count} records)"
 
-        results.each do |result|
-          values = @schema.collect { |column| generate_val(result, column) }
+        records.each do |record|
+          values = @schema.map { |column| generate_val(record, column) }
           page_builder.add(values)
         end
 
@@ -87,7 +96,7 @@ module Embulk
           api_version: config.param('api_version', :string, default: '41.0'),
           soql: config.param('soql', :string),
           schema: config.param('columns', :array),
-          conditions: config.param('conditions', :array)
+          conditions: config.param('conditions', :array, default: [])
         }
       end
 
