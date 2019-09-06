@@ -1,6 +1,14 @@
 *~
 /pkg/
 /tmp/
-/.bundle/
-/Gemfile.lock
-.DS_Store
+*.gemspec
+.gradle/
+/classpath/
+build/
+.idea
+/.settings/
+/.metadata/
+.classpath
+.project
+.vscode
+bin

@@ -1,0 +1,34 @@
+package org.embulk.input.soql;
+
+import org.embulk.config.Config;
+import org.embulk.config.ConfigDefault;
+import org.embulk.config.Task;
+import org.embulk.spi.SchemaConfig;
+
+interface PluginTask extends Task
+{
+    @Config("username")
+    String getUsername();
+
+    @Config("password")
+    String getPassword();
+
+    @Config("api_version")
+    String getApiVersion();
+
+    @Config("security_token")
+    String getSecurityToken();
+
+    @Config("auth_end_point")
+    String getAuthEndPoint();
+
+    @Config("object")
+    String getObject();
+
+    @Config("soql")
+    String getSoql();
+
+    @Config("columns")
+    @ConfigDefault("[]")
+    SchemaConfig getColumns();
+}
