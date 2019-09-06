@@ -1,45 +1,32 @@
 # Soql input plugin for Embulk
 
-TODO: Write short description here and embulk-input-soql.gemspec file.
+TODO: Write short description here and build.gradle file.
 
 ## Overview
 
 * **Plugin type**: input
 * **Resume supported**: yes
-* **Cleanup supported**: no
-* **Guess supported**: yes
-
-WIP
+* **Cleanup supported**: yes
+* **Guess supported**: no
 
 ## Configuration
 
-WIP
+- **option1**: description (integer, required)
+- **option2**: description (string, default: `"myvalue"`)
+- **option3**: description (string, default: `null`)
 
 ## Example
 
 ```yaml
 in:
   type: soql
-  username: sample@example.com
-  password: password
-  security_token: ***
-  client_id: ***
-  client_secret: ***
-  instance_url: https://sample.force.com
-  api_version: 41.0
-  soql: SELECT Id, Name, LastModifiedDate FROM Account WHERE LastModifiedDate > :last_date ORDER BY Id
-  conditions:
-    - {key: last_date, value: '2019-08-19T00:41:38Z' }
-  columns:
-    - {name: Id, type: string, index: 0}
-    - {name: Name, type: string, index: 1}
-    - {name: LastModifiedDate, type: timestamp, format: '%Y-%m-%dT%H:%M:%S.%L%z', index: 2}```
+  option1: example1
+  option2: example2
+```
 
 
 ## Build
 
 ```
-$ rake
+$ ./gradlew gem  # -t to watch change of files and rebuild continuously
 ```
-
-WIP
