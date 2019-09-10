@@ -22,13 +22,15 @@ public class SoqlColumnVisitor implements ColumnVisitor
 
     private JsonObject record;
     private PageBuilder pageBuilder;
+    private PluginTask pluginTask;
 
     public static final String DEFAULT_TIMESTAMP_PATTERN = "%Y-%m-%dT%H:%M:%S.%L%z";
 
-    public SoqlColumnVisitor(JsonObject record, PageBuilder pageBuilder)
+    public SoqlColumnVisitor(JsonObject record, PageBuilder pageBuilder, PluginTask pluginTask)
     {
         this.record = record;
         this.pageBuilder = pageBuilder;
+        this.pluginTask = pluginTask;
     }
 
     @Override
@@ -112,7 +114,8 @@ public class SoqlColumnVisitor implements ColumnVisitor
                 pageBuilder.setNull(column);
             }
             else {
-                TimestampParser parser = TimestampParser.of(DEFAULT_TIMESTAMP_PATTERN, "UTC");
+                String format = pluginTask.getColumns().getColumn(column.getIndex()).getConfigSource().getObjectNode().get("format").asText();
+                TimestampParser parser = TimestampParser.of(format, "JST");
                 Timestamp value = parser.parse(data.getAsString());
                 pageBuilder.setTimestamp(column, value);
             }
