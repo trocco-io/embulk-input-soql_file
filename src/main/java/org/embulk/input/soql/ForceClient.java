@@ -38,10 +38,12 @@ import org.slf4j.LoggerFactory;
  */
 public class ForceClient
 {
+
     private final Logger logger =  LoggerFactory.getLogger(ForceClient.class);
 
-    private static final long INITIAL_DELAY = 2;
-    private static final long PERIOD = 1;
+    private static final long INITIAL_DELAY = 1;
+    private static final long PERIOD = 5;
+    private static final int BATCH_STATUS_CHECK_INTERVAL = 60000;
 
     private BulkConnection bulkConnection;
 
@@ -94,7 +96,7 @@ public class ForceClient
         while (!checkBatchStatus.isShutdown()) {
             try {
                 logger.info("batch status is {}", batchExecutor.getBatchInfo().getState().toString());
-                Thread.sleep(1000);
+                Thread.sleep(BATCH_STATUS_CHECK_INTERVAL);
             }
             catch (InterruptedException e) {
             }
