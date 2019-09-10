@@ -11,7 +11,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.sforce.async.AsyncApiException;
-import com.sforce.ws.ConnectionException;
 
 import org.embulk.config.ConfigSource;
 import org.embulk.exec.GuessExecutor;
