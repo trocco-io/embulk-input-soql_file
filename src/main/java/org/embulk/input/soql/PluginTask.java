@@ -14,12 +14,14 @@ interface PluginTask extends Task
     String getPassword();
 
     @Config("api_version")
+    @ConfigDefault("\"46.0\"")
     String getApiVersion();
 
     @Config("security_token")
     String getSecurityToken();
 
     @Config("auth_end_point")
+    @ConfigDefault("\"https://login.salesforce.com/services/Soap/u/\"")
     String getAuthEndPoint();
 
     @Config("object")
