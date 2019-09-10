@@ -42,9 +42,6 @@ public class SoqlInputPlugin implements InputPlugin
     @Override
     public void cleanup(TaskSource taskSource, Schema schema, int taskCount, List<TaskReport> successTaskReports)
     {
-        String msg = "SoqlInputPlugin.cleanup method is not implemented yet";
-        logger.error(msg);
-        throw new UnsupportedOperationException(msg);
     }
 
     @Override
