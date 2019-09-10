@@ -8,7 +8,6 @@ module Embulk
       def guess_text(config, sample_text)
         {:columns =>
           SchemaGuess.from_hash_records(JSON.parse(sample_text)).map do |c|
-            next if c.name == 'attributes'
             {
               name: c.name,
               type: c.type,
