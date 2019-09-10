@@ -46,7 +46,7 @@ public class InputPluginUtils
         Spliterator<JsonElement> spliterator = Spliterators.spliteratorUnknownSize(jsonArray.iterator(), 0);
         StreamSupport.stream(spliterator, false).forEach(je -> {
             JsonObject jsonObject = je.getAsJsonObject();
-            schema.visitColumns(new SoqlColumnVisitor(jsonObject, pageBuilder));
+            schema.visitColumns(new SoqlColumnVisitor(jsonObject, pageBuilder, pluginTask));
             pageBuilder.addRecord();
         });
     }
