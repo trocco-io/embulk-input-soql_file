@@ -1,7 +1,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "embulk-input-soql"
-  spec.version       = "0.1.0"
+  spec.version       = "0.1.2"
   spec.authors       = ["dododo8m"]
   spec.summary       = %[Soql input plugin for Embulk]
   spec.description   = %[Loads records from Soql.]
