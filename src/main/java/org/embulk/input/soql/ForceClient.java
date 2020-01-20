@@ -103,7 +103,7 @@ public class ForceClient
             }
         }
         if (notCompleted(batchExecutor)) {
-            String msg = String.format("soql batch not completed. batch id is %s. job id is %s.", batchInfo.getId(), jobInfo.getId());
+            String msg = String.format("soql batch not completed. batch_id=%s. job_id=%s. batch_state=%s. batch_state_message=%s.", batchInfo.getId(), jobInfo.getId(), batchInfo.getState().toString(), batchInfo.getStateMessage());
             logger.error(msg);
             throw new ConfigException(msg);
         }
