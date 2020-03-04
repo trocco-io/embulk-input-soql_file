@@ -52,9 +52,11 @@ public class BatchExecutor implements Runnable
                     break;
                 case Failed:
                     result.complete(null);
-                break;
-                    default:
-                break;
+                    break;
+                default:
+                    String msg = String.format("soql batch running. batch_state_message=%s.", batchInfo.getState().toString());
+                    logger.info(msg);
+                    break;
             }
         }
         catch (AsyncApiException e) {
