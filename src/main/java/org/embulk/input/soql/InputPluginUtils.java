@@ -18,21 +18,21 @@ import org.embulk.spi.Buffer;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * InputPluginUtils
  */
 public class InputPluginUtils
 {
-    private static final int GUESS_BUFFER_SIZE = 5 * 1024 * 1024;
-
     private InputPluginUtils() {}
 
     public static JsonNode createGuessColums(JsonArray jsonArray)
     {
         Buffer sample = Buffer.copyOf(jsonArray.toString().getBytes());
         JsonNode columns = Exec.getInjector().getInstance(GuessExecutor.class)
-                .guessParserConfig(sample, Exec.newConfigSource(), createGuessConfig()).getObjectNode().get("columns");
+                .guessParserConfig(sample, Exec.newConfigSource(), createGuessConfig(sample.array().length)).getObjectNode().get("columns");
         return columns;
     }
 
@@ -51,10 +51,12 @@ public class InputPluginUtils
         });
     }
 
-    private static ConfigSource createGuessConfig()
+    private static ConfigSource createGuessConfig(int bufferSize)
     {
+        Logger logger =  LoggerFactory.getLogger(InputPluginUtils.class);
+        logger.info("guess buffer size: " + Integer.toString(bufferSize));
         return Exec.newConfigSource()
                     .set("guess_plugins", ImmutableList.of("soql"))
-                    .set("guess_sample_buffer_bytes", GUESS_BUFFER_SIZE);
+                    .set("guess_sample_buffer_bytes", bufferSize);
     }
 }
