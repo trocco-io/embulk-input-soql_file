@@ -1,9 +1,11 @@
 package org.embulk.input.soql;
 
-import java.io.InputStream;
 import java.util.List;
 
 import com.sforce.async.AsyncApiException;
+import com.sforce.async.BatchInfo;
+import com.sforce.async.BulkConnection;
+import com.sforce.async.JobInfo;
 
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
@@ -46,8 +48,13 @@ public class SoqlFilePlugin implements FileInputPlugin
         PluginTask pluginTask = taskSource.loadTask(PluginTask.class);
         try {
             ForceClient forceClient = new ForceClient(pluginTask);
-            List<InputStream> inputStreams = forceClient.query(pluginTask.getObject(), pluginTask.getSoql());
-            return new SoqlFileInput(pluginTask, inputStreams);
+            List<String> recordKeyList = forceClient.query(pluginTask.getObject(), pluginTask.getSoql());
+            BulkConnection bulkConnection = forceClient.getBulkConnection();
+            JobInfo jobInfo = forceClient.getJobInfo();
+            BatchInfo batchInfo = forceClient.getBatchInfo();
+            TransactionalFileInput input = new SoqlFileInput(pluginTask, recordKeyList, bulkConnection, jobInfo.getId(), batchInfo.getId());
+            bulkConnection.closeJob(jobInfo.getId());
+            return input;
         }
         catch (AsyncApiException e) {
             logger.error(e.getMessage(), e);

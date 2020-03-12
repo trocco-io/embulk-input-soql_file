@@ -1,7 +1,8 @@
 package org.embulk.input.soql;
 
-import java.io.InputStream;
 import java.util.List;
+
+import com.sforce.async.BulkConnection;
 
 import org.embulk.config.TaskReport;
 import org.embulk.spi.Exec;
@@ -11,9 +12,9 @@ import org.embulk.spi.util.InputStreamFileInput;
 public class SoqlFileInput extends InputStreamFileInput implements TransactionalFileInput
 {
 
-  public SoqlFileInput(PluginTask task, List<InputStream> inputStreams)
+  public SoqlFileInput(PluginTask task, List<String> recordKeyList, BulkConnection bulkConnection, String jobId, String batchId)
   {
-    super(task.getBufferAllocator(), new SingleFileProvider(inputStreams));
+    super(task.getBufferAllocator(), new SingleFileProvider(recordKeyList, bulkConnection, jobId, batchId));
   }
 
   @Override

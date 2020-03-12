@@ -1,7 +1,6 @@
 package org.embulk.input.soql;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -9,7 +8,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
@@ -41,6 +39,8 @@ public class ForceClient
     private static final int BATCH_STATUS_CHECK_INTERVAL = 10000;
 
     private BulkConnection bulkConnection;
+    private JobInfo jobInfo;
+    private BatchInfo batchInfo;
 
     public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException
     {
@@ -48,29 +48,30 @@ public class ForceClient
         bulkConnection = new BulkConnection(connectorConfig);
     }
 
-    public List<InputStream> query(
+    public BulkConnection getBulkConnection()
+    {
+        return this.bulkConnection;
+    }
+
+    public JobInfo getJobInfo()
+    {
+        return this.jobInfo;
+    }
+
+    public BatchInfo getBatchInfo()
+    {
+        return this.batchInfo;
+    }
+
+    public List<String> query(
         String object,
         String soql) throws AsyncApiException, InterruptedException, ExecutionException
     {
-        JobInfo jobInfo = createJobInfo(object);
-        BatchInfo batchInfo = createBatchInfo(soql, jobInfo);
+        this.jobInfo = createJobInfo(object);
+        this.batchInfo = createBatchInfo(soql, jobInfo);
 
         CompletableFuture<String[]> result = execBatch(jobInfo, batchInfo);
-        List<InputStream> records = findRecords(jobInfo, batchInfo, result);
-
-        bulkConnection.closeJob(jobInfo.getId());
-        return records;
-    }
-
-    private List<InputStream> findRecords(
-        JobInfo jobInfo,
-        BatchInfo batchInfo,
-        CompletableFuture<String[]> result) throws InterruptedException, ExecutionException
-    {
-        return Arrays
-                .asList(result.get()).stream()
-                .map(resultId -> findPartRecords(resultId, jobInfo.getId(), batchInfo.getId()))
-                .collect(Collectors.toList());
+        return Arrays.asList(result.get());
     }
 
     private CompletableFuture<String[]> execBatch(
@@ -117,17 +118,6 @@ public class ForceClient
     private boolean notCompleted(BatchExecutor batchExecutor) throws AsyncApiException
     {
         return batchExecutor.getBatchInfo().getState() != BatchStateEnum.Completed;
-    }
-
-    private InputStream findPartRecords(String resultId, String jobId, String batchId)
-    {
-        try {
-            return bulkConnection.getQueryResultStream(jobId, batchId, resultId);
-        }
-        catch (AsyncApiException e) {
-            logger.error(e.getMessage(), e);
-            throw new ExecutionInterruptedException(e);
-        }
     }
 
     private JobInfo createJobInfo(String object) throws AsyncApiException
