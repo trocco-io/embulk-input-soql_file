@@ -77,7 +77,7 @@ public class ForceClient
         JobInfo jobInfo,
         BatchInfo batchInfo) throws AsyncApiException
     {
-        BatchExecutor batchExecutor = new BatchExecutor(bulkConnection, batchInfo, jobInfo);
+        BatchExecutor batchExecutor = new BatchExecutor(bulkConnection, batchInfo);
         ScheduledExecutorService checkBatchStatus = Executors.newSingleThreadScheduledExecutor();
         checkBatchStatus.scheduleAtFixedRate(batchExecutor, INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
 
@@ -96,6 +96,7 @@ public class ForceClient
             }
         }
         if (notCompleted(batchExecutor)) {
+            batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.CSV);
             String msg = String.format("soql batch not completed. batch_id=%s. job_id=%s. batch_state=%s. batch_state_message=%s.", batchInfo.getId(), jobInfo.getId(), batchInfo.getState().toString(), batchInfo.getStateMessage());
             logger.error(msg);
             throw new ConfigException(msg);

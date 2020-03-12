@@ -8,7 +8,6 @@ import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.ContentType;
-import com.sforce.async.JobInfo;
 import com.sforce.async.QueryResultList;
 
 import org.slf4j.Logger;
@@ -24,13 +23,11 @@ public class BatchExecutor implements Runnable
     private CompletableFuture<String[]> result = new CompletableFuture<>();
     private BulkConnection bulkConnection;
     private BatchInfo batchInfo;
-    private JobInfo jobInfo;
 
-    public BatchExecutor(BulkConnection bulkConnection, BatchInfo batchInfo, JobInfo jobInfo)
+    public BatchExecutor(BulkConnection bulkConnection, BatchInfo batchInfo)
     {
         this.bulkConnection = bulkConnection;
         this.batchInfo = batchInfo;
-        this.jobInfo = jobInfo;
     }
 
     public CompletableFuture<String[]> getResult()
@@ -55,11 +52,11 @@ public class BatchExecutor implements Runnable
                     result.complete(queryResultList.getResult());
                     break;
                 case Failed:
+                    logger.info("soql batch error. batch_state_message={}.", batchInfo.getState().toString());
                     result.complete(null);
                     break;
                 default:
-                    String msg = String.format("soql batch running. batch_state_message=%s.", batchInfo.getState().toString());
-                    logger.info(msg);
+                    logger.info("soql batch running. batch_state_message={}.", batchInfo.getState().toString());
                     break;
             }
         }
