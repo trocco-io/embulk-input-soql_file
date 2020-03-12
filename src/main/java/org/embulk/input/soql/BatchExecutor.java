@@ -8,6 +8,7 @@ import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.ContentType;
+import com.sforce.async.JobInfo;
 import com.sforce.async.QueryResultList;
 
 import org.slf4j.Logger;
@@ -23,11 +24,13 @@ public class BatchExecutor implements Runnable
     private CompletableFuture<String[]> result = new CompletableFuture<>();
     private BulkConnection bulkConnection;
     private BatchInfo batchInfo;
+    private JobInfo jobInfo;
 
-    public BatchExecutor(BulkConnection bulkConnection, BatchInfo batchInfo)
+    public BatchExecutor(BulkConnection bulkConnection, BatchInfo batchInfo, JobInfo jobInfo)
     {
         this.bulkConnection = bulkConnection;
         this.batchInfo = batchInfo;
+        this.jobInfo = jobInfo;
     }
 
     public CompletableFuture<String[]> getResult()
@@ -44,10 +47,11 @@ public class BatchExecutor implements Runnable
     public void run()
     {
         try {
-            this.batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.JSON);
+            this.batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.CSV);
             switch (batchInfo.getState()) {
                 case Completed:
-                    QueryResultList queryResultList =  bulkConnection.getQueryResultList(batchInfo.getJobId(), batchInfo.getId(), ContentType.JSON);
+                    logger.info("batch completed");
+                    QueryResultList queryResultList =  bulkConnection.getQueryResultList(batchInfo.getJobId(), batchInfo.getId(), ContentType.CSV);
                     result.complete(queryResultList.getResult());
                     break;
                 case Failed:
