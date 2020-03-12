@@ -47,14 +47,17 @@ public class BatchExecutor implements Runnable
             this.batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.JSON);
             switch (batchInfo.getState()) {
                 case Completed:
+                    logger.info("batch completed");
                     QueryResultList queryResultList =  bulkConnection.getQueryResultList(batchInfo.getJobId(), batchInfo.getId(), ContentType.JSON);
                     result.complete(queryResultList.getResult());
                     break;
                 case Failed:
+                    logger.info("soql batch error. batch_state_message={}.", batchInfo.getState().toString());
                     result.complete(null);
-                break;
-                    default:
-                break;
+                    break;
+                default:
+                    logger.info("soql batch running. batch_state_message={}.", batchInfo.getState().toString());
+                    break;
             }
         }
         catch (AsyncApiException e) {
