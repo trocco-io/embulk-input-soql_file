@@ -44,11 +44,11 @@ public class BatchExecutor implements Runnable
     public void run()
     {
         try {
-            this.batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.JSON);
+            this.batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.CSV);
             switch (batchInfo.getState()) {
                 case Completed:
                     logger.info("batch completed");
-                    QueryResultList queryResultList =  bulkConnection.getQueryResultList(batchInfo.getJobId(), batchInfo.getId(), ContentType.JSON);
+                    QueryResultList queryResultList =  bulkConnection.getQueryResultList(batchInfo.getJobId(), batchInfo.getId(), ContentType.CSV);
                     result.complete(queryResultList.getResult());
                     break;
                 case Failed:

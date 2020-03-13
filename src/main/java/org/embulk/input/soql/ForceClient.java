@@ -1,9 +1,6 @@
 package org.embulk.input.soql;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -11,11 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchStateEnum;
@@ -46,6 +39,8 @@ public class ForceClient
     private static final int BATCH_STATUS_CHECK_INTERVAL = 10000;
 
     private BulkConnection bulkConnection;
+    private JobInfo jobInfo;
+    private BatchInfo batchInfo;
 
     public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException
     {
@@ -53,31 +48,30 @@ public class ForceClient
         bulkConnection = new BulkConnection(connectorConfig);
     }
 
-    public JsonArray query(
+    public BulkConnection getBulkConnection()
+    {
+        return this.bulkConnection;
+    }
+
+    public JobInfo getJobInfo()
+    {
+        return this.jobInfo;
+    }
+
+    public BatchInfo getBatchInfo()
+    {
+        return this.batchInfo;
+    }
+
+    public List<String> query(
         String object,
         String soql) throws AsyncApiException, InterruptedException, ExecutionException
     {
-        JobInfo jobInfo = createJobInfo(object);
-        BatchInfo batchInfo = createBatchInfo(soql, jobInfo);
+        this.jobInfo = createJobInfo(object);
+        this.batchInfo = createBatchInfo(soql, jobInfo);
 
         CompletableFuture<String[]> result = execBatch(jobInfo, batchInfo);
-        JsonArray records = findRecords(jobInfo, batchInfo, result);
-
-        bulkConnection.closeJob(jobInfo.getId());
-        return records;
-    }
-
-    private JsonArray findRecords(
-        JobInfo jobInfo,
-        BatchInfo batchInfo,
-        CompletableFuture<String[]> result) throws InterruptedException, ExecutionException
-    {
-        JsonArray records = new JsonArray();
-        List<JsonArray> partRecords = Arrays.asList(result.get()).stream()
-                .map(resultId -> findPartRecords(resultId, jobInfo.getId(), batchInfo.getId()))
-                .collect(Collectors.toList());
-        partRecords.forEach(partColumn -> records.addAll(partColumn));
-        return records;
+        return Arrays.asList(result.get());
     }
 
     private CompletableFuture<String[]> execBatch(
@@ -103,7 +97,7 @@ public class ForceClient
             }
         }
         if (notCompleted(batchExecutor)) {
-            batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.JSON);
+            batchInfo = bulkConnection.getBatchInfo(batchInfo.getJobId(), batchInfo.getId(), ContentType.CSV);
             String msg = String.format("soql batch not completed. batch_id=%s. job_id=%s. batch_state=%s. batch_state_message=%s.", batchInfo.getId(), jobInfo.getId(), batchInfo.getState().toString(), batchInfo.getStateMessage());
             logger.error(msg);
             throw new ConfigException(msg);
@@ -126,27 +120,13 @@ public class ForceClient
         return batchExecutor.getBatchInfo().getState() != BatchStateEnum.Completed;
     }
 
-    private JsonArray findPartRecords(String resultId, String jobId, String batchId)
-    {
-        try {
-            InputStream is = bulkConnection.getQueryResultStream(jobId, batchId, resultId);
-            JsonParser jsonParser = new JsonParser();
-            JsonElement jsonElement = jsonParser.parse(new InputStreamReader(is, StandardCharsets.UTF_8));
-            return jsonElement.getAsJsonArray();
-        }
-        catch (AsyncApiException e) {
-            logger.error(e.getMessage(), e);
-            throw new ExecutionInterruptedException(e);
-        }
-    }
-
     private JobInfo createJobInfo(String object) throws AsyncApiException
     {
         JobInfo jobInfo = new JobInfo();
         jobInfo.setObject(object);
         jobInfo.setOperation(OperationEnum.query);
         jobInfo.setConcurrencyMode(ConcurrencyMode.Parallel);
-        jobInfo.setContentType(ContentType.JSON);
+        jobInfo.setContentType(ContentType.CSV);
         jobInfo = bulkConnection.createJob(jobInfo);
         return jobInfo;
     }
