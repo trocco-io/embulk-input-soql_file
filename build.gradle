@@ -82,11 +82,11 @@ Gem::Specification.new do |spec|
   spec.name          = "${project.name}"
   spec.version       = "${project.version}"
   spec.authors       = ["dododo8m"]
-  spec.summary       = %[Soql input plugin for Embulk]
-  spec.description   = %[Loads records from Soql.]
+  spec.summary       = %[Soql_file input plugin for Embulk]
+  spec.description   = %[Loads records from Soql_file.]
   spec.email         = ["taichiddt+8m@gmail.com"]
   spec.licenses      = ["MIT"]
-  # TODO set this: spec.homepage      = "https://github.com/taichiddt+8m/embulk-input-soql"
+  # TODO set this: spec.homepage      = "https://github.com/taichiddt+8m/embulk-input-soql_file"
 
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")
