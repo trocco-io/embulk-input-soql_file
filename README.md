@@ -19,7 +19,7 @@ WIP
 
 ```yaml
 in:
-  type: soql
+  type: soql_file
   username: sample@example.com
   password: password
   security_token: ***
