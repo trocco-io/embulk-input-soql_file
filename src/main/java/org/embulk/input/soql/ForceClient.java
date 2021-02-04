@@ -2,11 +2,8 @@ package org.embulk.input.soql;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +26,6 @@ import com.sforce.soap.partner.*;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
-import com.sforce.ws.MessageHandler;
 import org.embulk.config.ConfigException;
 import org.embulk.exec.ExecutionInterruptedException;
 import org.slf4j.Logger;
