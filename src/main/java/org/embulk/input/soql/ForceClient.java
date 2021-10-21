@@ -1,6 +1,10 @@
 package org.embulk.input.soql;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -8,6 +12,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
@@ -17,7 +22,7 @@ import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.OperationEnum;
-import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.*;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
@@ -37,13 +42,13 @@ public class ForceClient
     private static final long INITIAL_DELAY = 1;
     private static final long PERIOD = 5;
     private static final int BATCH_STATUS_CHECK_INTERVAL = 10000;
+    private static final String PARTNER_TRACE_LOG = "/tmp/partner_trace.log";
 
     private BulkConnection bulkConnection;
     private JobInfo jobInfo;
     private BatchInfo batchInfo;
 
-    public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException
-    {
+    public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException, IOException {
         ConnectorConfig connectorConfig = createConnectorConfig(pluginTask);
         bulkConnection = new BulkConnection(connectorConfig);
     }
@@ -131,13 +136,26 @@ public class ForceClient
         return jobInfo;
     }
 
-    private ConnectorConfig createConnectorConfig(PluginTask pluginTask) throws ConnectionException
-    {
+    private ConnectorConfig createConnectorConfig(PluginTask pluginTask) throws ConnectionException, IOException {
+
         ConnectorConfig partnerConfig = new ConnectorConfig();
-        partnerConfig.setUsername(pluginTask.getUsername());
-        partnerConfig.setPassword(pluginTask.getPassword() + pluginTask.getSecurityToken());
-        partnerConfig.setAuthEndpoint(pluginTask.getAuthEndPoint() + pluginTask.getApiVersion());
-        new PartnerConnection(partnerConfig);
+        try {
+            partnerConfig.setTraceFile(PARTNER_TRACE_LOG);
+            partnerConfig.setTraceMessage(true);
+            partnerConfig.teeOutputStream(partnerConfig.getTraceStream());
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            partnerConfig.teeInputStream(bout.toByteArray());
+            partnerConfig.setPrettyPrintXml(true);
+            partnerConfig.setUsername(pluginTask.getUsername());
+            partnerConfig.setPassword(pluginTask.getPassword() + pluginTask.getSecurityToken());
+            partnerConfig.setAuthEndpoint(pluginTask.getAuthEndPoint() + pluginTask.getApiVersion());
+            new PartnerConnection(partnerConfig);
+        } catch (ConnectionException e) {
+            partnerConfig.getTraceStream().close();
+            List<String> trace = Files.lines(Paths.get(PARTNER_TRACE_LOG)).collect(Collectors.toList());
+            logger.error(String.join(System.lineSeparator(), trace));
+            throw e;
+        }
 
         ConnectorConfig config = new ConnectorConfig();
         config.setSessionId(partnerConfig.getSessionId());
