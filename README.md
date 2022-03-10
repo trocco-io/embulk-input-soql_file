@@ -15,6 +15,8 @@ WIP
 
 WIP
 
+* **including_invisible_record**: if true, including deleted or archived records (boolean, default: false)
+
 ## Example
 
 ```yaml
@@ -28,6 +30,7 @@ in:
   instance_url: https://sample.force.com
   api_version: 41.0
   soql: SELECT Id, Name, LastModifiedDate FROM Account WHERE LastModifiedDate > :last_date ORDER BY Id
+  including_invisible_record: true
   conditions:
     - {key: last_date, value: '2019-08-19T00:41:38Z' }
   columns:

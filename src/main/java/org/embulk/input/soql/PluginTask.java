@@ -29,6 +29,10 @@ interface PluginTask extends Task
     @Config("object")
     String getObject();
 
+    @Config("including_invisible_record")
+    @ConfigDefault("false")
+    boolean getIncludingInvisibleRecord();
+
     @Config("soql")
     String getSoql();
 
