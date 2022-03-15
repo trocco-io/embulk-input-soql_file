@@ -65,7 +65,7 @@ public class ForceClient
 
     public List<String> query(PluginTask pluginTask) throws AsyncApiException, InterruptedException, ExecutionException
     {
-        this.jobInfo = createJobInfo(pluginTask.getObject(), pluginTask.getIncludingInvisibleRecord());
+        this.jobInfo = createJobInfo(pluginTask.getObject(), pluginTask.getIncludeDeletedOrArchivedRecords());
         this.batchInfo = createBatchInfo(pluginTask.getSoql(), jobInfo);
 
         CompletableFuture<String[]> result = execBatch(jobInfo, batchInfo);
@@ -118,11 +118,11 @@ public class ForceClient
         return batchExecutor.getBatchInfo().getState() != BatchStateEnum.Completed;
     }
 
-    private JobInfo createJobInfo(String object, boolean includingInvisibleRecord) throws AsyncApiException
+    private JobInfo createJobInfo(String object, boolean includeDeletedOrArchivedRecords) throws AsyncApiException
     {
         JobInfo jobInfo = new JobInfo();
         jobInfo.setObject(object);
-        OperationEnum operation = includingInvisibleRecord ? OperationEnum.queryAll : OperationEnum.query;
+        OperationEnum operation = includeDeletedOrArchivedRecords ? OperationEnum.queryAll : OperationEnum.query;
         jobInfo.setOperation(operation);
         jobInfo.setConcurrencyMode(ConcurrencyMode.Parallel);
         jobInfo.setContentType(ContentType.CSV);
