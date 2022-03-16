@@ -29,6 +29,10 @@ interface PluginTask extends Task
     @Config("object")
     String getObject();
 
+    @Config("include_deleted_or_archived_records")
+    @ConfigDefault("false")
+    boolean getIncludeDeletedOrArchivedRecords();
+
     @Config("soql")
     String getSoql();
 

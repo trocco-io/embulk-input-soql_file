@@ -48,7 +48,7 @@ public class SoqlFilePlugin implements FileInputPlugin
         PluginTask pluginTask = taskSource.loadTask(PluginTask.class);
         try {
             ForceClient forceClient = new ForceClient(pluginTask);
-            List<String> recordKeyList = forceClient.query(pluginTask.getObject(), pluginTask.getSoql());
+            List<String> recordKeyList = forceClient.query(pluginTask);
             BulkConnection bulkConnection = forceClient.getBulkConnection();
             JobInfo jobInfo = forceClient.getJobInfo();
             BatchInfo batchInfo = forceClient.getBatchInfo();
