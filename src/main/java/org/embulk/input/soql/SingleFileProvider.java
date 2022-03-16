@@ -32,12 +32,12 @@ public class SingleFileProvider implements InputStreamFileInput.Provider
     }
 
     @Override
-    public InputStream openNext()
+    public InputStreamWithHints openNextWithHints()
     {
         if (!iterator.hasNext()) {
             return null;
         }
-        return findPartRecords(iterator.next(), jobId, batchId);
+        return new InputStreamWithHints(findPartRecords(iterator.next(), jobId, batchId));
     }
 
     private InputStream findPartRecords(String resultId, String jobId, String batchId)
