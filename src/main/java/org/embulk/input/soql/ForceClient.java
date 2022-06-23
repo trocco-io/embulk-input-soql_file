@@ -2,7 +2,9 @@ package org.embulk.input.soql;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -17,7 +19,6 @@ import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.OperationEnum;
-import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
@@ -42,9 +43,13 @@ public class ForceClient
     private JobInfo jobInfo;
     private BatchInfo batchInfo;
 
+    private final Map<AuthMethod, ConnectorConfigCreater> connectorConfigCreaters = new HashMap<>();
+
     public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException
     {
-        ConnectorConfig connectorConfig = createConnectorConfig(pluginTask);
+        setConnectorConfigCreaters(pluginTask);
+        ConnectorConfigCreater connectorConfigCreater = connectorConfigCreaters.get(pluginTask.getAuthMethod());
+        ConnectorConfig connectorConfig = connectorConfigCreater.createConnectorConfig();
         bulkConnection = new BulkConnection(connectorConfig);
     }
 
@@ -130,21 +135,8 @@ public class ForceClient
         return jobInfo;
     }
 
-    private ConnectorConfig createConnectorConfig(PluginTask pluginTask) throws ConnectionException
-    {
-        ConnectorConfig partnerConfig = new ConnectorConfig();
-        partnerConfig.setUsername(pluginTask.getUsername());
-        partnerConfig.setPassword(pluginTask.getPassword() + pluginTask.getSecurityToken());
-        partnerConfig.setAuthEndpoint(pluginTask.getAuthEndPoint() + pluginTask.getApiVersion());
-        new PartnerConnection(partnerConfig);
-
-        ConnectorConfig config = new ConnectorConfig();
-        config.setSessionId(partnerConfig.getSessionId());
-        String soapEndpoint = partnerConfig.getServiceEndpoint();
-        String restEndpoint = soapEndpoint.substring(0, soapEndpoint.indexOf("Soap/")) + "async/" + pluginTask.getApiVersion();
-        config.setRestEndpoint(restEndpoint);
-        config.setCompression(true);
-        config.setTraceMessage(false);
-        return config;
+    private void setConnectorConfigCreaters(PluginTask pluginTask) {
+        connectorConfigCreaters.put(AuthMethod.oauth, new OauthConnectorConfigCreater(pluginTask));
+        connectorConfigCreaters.put(AuthMethod.user_password, new UserPasswordConnectorConfigCreater(pluginTask));
     }
 }

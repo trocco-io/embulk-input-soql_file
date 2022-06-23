@@ -7,24 +7,41 @@ import org.embulk.config.Task;
 import org.embulk.spi.BufferAllocator;
 import org.embulk.spi.SchemaConfig;
 
+import java.util.Optional;
+
 interface PluginTask extends Task
 {
+    @Config("auth_method")
+    @ConfigDefault("\"user_password\"")
+    AuthMethod getAuthMethod();
+
+    @Config("instance_url")
+    @ConfigDefault("null")
+    Optional<String> getInstanceUrl();
+
+    @Config("access_token")
+    @ConfigDefault("null")
+    Optional<String> getAccessToken();
+
     @Config("username")
-    String getUsername();
+    @ConfigDefault("null")
+    Optional<String> getUsername();
 
     @Config("password")
-    String getPassword();
+    @ConfigDefault("null")
+    Optional<String> getPassword();
 
     @Config("api_version")
     @ConfigDefault("\"46.0\"")
     String getApiVersion();
 
     @Config("security_token")
-    String getSecurityToken();
+    @ConfigDefault("null")
+    Optional<String> getSecurityToken();
 
     @Config("auth_end_point")
     @ConfigDefault("\"https://login.salesforce.com/services/Soap/u/\"")
-    String getAuthEndPoint();
+    Optional<String> getAuthEndPoint();
 
     @Config("object")
     String getObject();
