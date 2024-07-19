@@ -14,14 +14,19 @@ class UserPasswordConnectorConfigCreater implements ConnectorConfigCreater {
     public ConnectorConfig createConnectorConfig() throws ConnectionException {
         ConnectorConfig partnerConfig = new ConnectorConfig();
         partnerConfig.setUsername(pluginTask.getUsername().get());
-        partnerConfig.setPassword(pluginTask.getPassword().get() + pluginTask.getSecurityToken().get());
-        partnerConfig.setAuthEndpoint(pluginTask.getAuthEndPoint().get() + pluginTask.getApiVersion());
+        partnerConfig.setPassword(
+                pluginTask.getPassword().get() + pluginTask.getSecurityToken().get());
+        partnerConfig.setAuthEndpoint(
+                pluginTask.getAuthEndPoint().get() + pluginTask.getApiVersion());
         new PartnerConnection(partnerConfig);
 
         ConnectorConfig config = new ConnectorConfig();
         config.setSessionId(partnerConfig.getSessionId());
         String soapEndpoint = partnerConfig.getServiceEndpoint();
-        String restEndpoint = soapEndpoint.substring(0, soapEndpoint.indexOf("Soap/")) + "async/" + pluginTask.getApiVersion();
+        String restEndpoint =
+                soapEndpoint.substring(0, soapEndpoint.indexOf("Soap/"))
+                        + "async/"
+                        + pluginTask.getApiVersion();
         config.setRestEndpoint(restEndpoint);
         config.setCompression(true);
         config.setTraceMessage(false);

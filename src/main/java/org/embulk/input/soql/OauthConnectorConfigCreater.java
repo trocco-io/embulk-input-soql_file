@@ -12,7 +12,8 @@ class OauthConnectorConfigCreater implements ConnectorConfigCreater {
     public ConnectorConfig createConnectorConfig() {
         ConnectorConfig config = new ConnectorConfig();
         config.setSessionId(pluginTask.getAccessToken().get());
-        String restEndpoint = pluginTask.getInstanceUrl().get() + "/services/async/" + pluginTask.getApiVersion();
+        String restEndpoint =
+                pluginTask.getInstanceUrl().get() + "/services/async/" + pluginTask.getApiVersion();
 
         config.setRestEndpoint(restEndpoint);
         config.setCompression(true);
