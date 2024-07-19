@@ -3,6 +3,7 @@ plugins {
     id "maven-publish"
     id "org.embulk.embulk-plugins" version "0.5.5"
     id "com.diffplug.spotless" version "5.15.0"
+    id "com.palantir.git-version" version "0.13.0"
 }
 
 repositories {
@@ -15,7 +16,14 @@ configurations {
 
 group = "io.trocco"
 description = "An embulk input plugin to load records from Salesforce."
-version = "0.2.0"
+version = {
+    def vd = versionDetails()
+    if (vd.commitDistance == 0 && vd.lastTag ==~ /^v[0-9]+\.[0-9]+\.[0-9]+(\.[a-zA-Z0-9]+)?/) {
+        vd.lastTag.substring(1)
+    } else {
+        "0.0.0.${vd.gitHash}"
+    }
+}()
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
