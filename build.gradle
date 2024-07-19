@@ -2,6 +2,7 @@ plugins {
     id "java"
     id "maven-publish"
     id "org.embulk.embulk-plugins" version "0.5.5"
+    id "com.diffplug.spotless" version "5.15.0"
 }
 
 repositories {
@@ -45,4 +46,12 @@ gem {
     summary = "An embulk input plugin to load records from Salesforce."
     homepage = "https://github.com/trocco-io/embulk-input-soql_file"
     licenses = [ "MIT" ]
+}
+
+spotless {
+    java {
+        importOrder()
+        removeUnusedImports()
+        googleJavaFormat().aosp()
+    }
 }
