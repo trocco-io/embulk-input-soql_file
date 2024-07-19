@@ -8,7 +8,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 configurations {
     provided
@@ -29,14 +28,14 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.9.17"
-    provided "org.embulk:embulk-core:0.9.17"
-    // https://mvnrepository.com/artifact/com.force.api/force-wsc
-    compile group: 'com.force.api', name: 'force-wsc', version: '47.0.0'
-    // https://mvnrepository.com/artifact/com.force.api/force-partner-api
-    compile group: 'com.force.api', name: 'force-partner-api', version: '47.0.0'
-    // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
-    testCompile "junit:junit:4.+"
+    def embulkVersion = "0.10.36"
+
+    compileOnly "org.embulk:embulk-api:${embulkVersion}"
+    compileOnly "org.embulk:embulk-spi:${embulkVersion}"
+    compile "com.force.api:force-wsc:47.0.0"
+    compile "com.force.api:force-partner-api:47.0.0"
+
+    testImplementation "junit:junit:4.+"
 }
 
 embulkPlugin {
