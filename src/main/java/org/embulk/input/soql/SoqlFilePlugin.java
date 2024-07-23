@@ -10,7 +10,6 @@ import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
 import org.embulk.config.TaskSource;
-import org.embulk.exec.ExecutionInterruptedException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.FileInputPlugin;
 import org.embulk.spi.TransactionalFileInput;
@@ -60,7 +59,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
             throw new ConfigException(e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            throw new ExecutionInterruptedException(e);
+            throw new RuntimeException(e);
         }
     }
 }

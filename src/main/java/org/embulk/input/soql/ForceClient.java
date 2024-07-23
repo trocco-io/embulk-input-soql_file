@@ -21,7 +21,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.embulk.config.ConfigException;
-import org.embulk.exec.ExecutionInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +88,7 @@ public class ForceClient {
                 Thread.sleep(BATCH_STATUS_CHECK_INTERVAL);
             } catch (InterruptedException e) {
                 logger.error(e.getMessage(), e);
-                throw new ExecutionInterruptedException(e);
+                throw new RuntimeException(e);
             }
         }
         if (notCompleted(batchExecutor)) {
