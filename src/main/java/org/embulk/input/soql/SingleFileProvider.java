@@ -7,8 +7,8 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import org.embulk.exec.ExecutionInterruptedException;
-import org.embulk.spi.util.InputStreamFileInput;
-import org.embulk.spi.util.InputStreamFileInput.InputStreamWithHints;
+import org.embulk.util.file.InputStreamFileInput;
+import org.embulk.util.file.InputStreamFileInput.InputStreamWithHints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -32,6 +32,9 @@ dependencies {
 
     compileOnly "org.embulk:embulk-api:${embulkVersion}"
     compileOnly "org.embulk:embulk-spi:${embulkVersion}"
+
+    compile "org.embulk:embulk-util-file:0.1.5"
+
     compile "com.force.api:force-wsc:47.0.0"
     compile "com.force.api:force-partner-api:47.0.0"
 

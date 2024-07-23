@@ -5,7 +5,7 @@ import java.util.List;
 import org.embulk.config.TaskReport;
 import org.embulk.spi.Exec;
 import org.embulk.spi.TransactionalFileInput;
-import org.embulk.spi.util.InputStreamFileInput;
+import org.embulk.util.file.InputStreamFileInput;
 
 public class SoqlFileInput extends InputStreamFileInput implements TransactionalFileInput {
 

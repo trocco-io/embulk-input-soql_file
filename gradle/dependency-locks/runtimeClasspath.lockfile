@@ -12,3 +12,4 @@ org.antlr:antlr-runtime:3.5
 org.antlr:stringtemplate:3.2.1
 org.codehaus.jackson:jackson-core-asl:1.9.13
 org.codehaus.jackson:jackson-mapper-asl:1.9.13
+org.embulk:embulk-util-file:0.1.5
