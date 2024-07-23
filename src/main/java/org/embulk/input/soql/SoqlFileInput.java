@@ -16,7 +16,7 @@ public class SoqlFileInput extends InputStreamFileInput implements Transactional
             String jobId,
             String batchId) {
         super(
-                task.getBufferAllocator(),
+                Exec.getBufferAllocator(),
                 new SingleFileProvider(recordKeyList, bulkConnection, jobId, batchId));
     }
 

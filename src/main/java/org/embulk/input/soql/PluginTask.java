@@ -3,9 +3,7 @@ package org.embulk.input.soql;
 import java.util.Optional;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
-import org.embulk.config.ConfigInject;
 import org.embulk.config.Task;
-import org.embulk.spi.BufferAllocator;
 import org.embulk.spi.SchemaConfig;
 
 interface PluginTask extends Task {
@@ -54,7 +52,4 @@ interface PluginTask extends Task {
     @Config("columns")
     @ConfigDefault("[]")
     SchemaConfig getColumns();
-
-    @ConfigInject
-    BufferAllocator getBufferAllocator();
 }
