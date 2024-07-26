@@ -1,10 +1,11 @@
 plugins {
-    id "com.jfrog.bintray" version "1.1"
-    id "com.github.jruby-gradle.base" version "1.5.0"
     id "java"
-    id "checkstyle"
+    id "maven-publish"
+    id "org.embulk.embulk-plugins" version "0.5.5"
+    id "com.diffplug.spotless" version "5.15.0"
+    id "com.palantir.git-version" version "0.13.0"
 }
-import com.github.jrubygradle.JRubyExec
+
 repositories {
     mavenCentral()
     jcenter()
@@ -13,7 +14,16 @@ configurations {
     provided
 }
 
-version = "0.2.0"
+group = "io.trocco"
+description = "An embulk input plugin to load records from Salesforce."
+version = {
+    def vd = versionDetails()
+    if (vd.commitDistance == 0 && vd.lastTag ==~ /^v[0-9]+\.[0-9]+\.[0-9]+(\.[a-zA-Z0-9]+)?/) {
+        vd.lastTag.substring(1)
+    } else {
+        "0.0.0.${vd.gitHash}"
+    }
+}()
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -29,74 +39,27 @@ dependencies {
     testCompile "junit:junit:4.+"
 }
 
-task classpath(type: Copy, dependsOn: ["jar"]) {
-    doFirst { file("classpath").deleteDir() }
-    from (configurations.runtime - configurations.provided + files(jar.archivePath))
-    into "classpath"
+embulkPlugin {
+    mainClass = "org.embulk.input.soql.SoqlFilePlugin"
+    category = "input"
+    type = "soql_file"
 }
+
 clean { delete "classpath" }
 
-checkstyle {
-    configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
-    toolVersion = '6.14.1'
-}
-checkstyleMain {
-    configFile = file("${project.rootDir}/config/checkstyle/default.xml")
-    ignoreFailures = false
-}
-checkstyleTest {
-    configFile = file("${project.rootDir}/config/checkstyle/default.xml")
-    ignoreFailures = false
-}
-task checkstyle(type: Checkstyle) {
-    classpath = sourceSets.main.output + sourceSets.test.output
-    source = sourceSets.main.allJava + sourceSets.test.allJava
+gem {
+    from("LICENSE.txt")
+    authors = [ "dododo8m" ]
+    email = [ "taichiddt+8m@gmail.com" ]
+    summary = "An embulk input plugin to load records from Salesforce."
+    homepage = "https://github.com/trocco-io/embulk-input-soql_file"
+    licenses = [ "MIT" ]
 }
 
-task gem(type: JRubyExec, dependsOn: ["gemspec", "classpath"]) {
-    jrubyArgs "-S"
-    script "gem"
-    scriptArgs "build", "${project.name}.gemspec"
-    doLast { ant.move(file: "${project.name}-${project.version}.gem", todir: "pkg") }
-}
-
-task gemPush(type: JRubyExec, dependsOn: ["gem"]) {
-    jrubyArgs "-S"
-    script "gem"
-    scriptArgs "push", "pkg/${project.name}-${project.version}.gem"
-}
-
-task "package"(dependsOn: ["gemspec", "classpath"]) {
-    doLast {
-        println "> Build succeeded."
-        println "> You can run embulk with '-L ${file(".").absolutePath}' argument."
+spotless {
+    java {
+        importOrder()
+        removeUnusedImports()
+        googleJavaFormat().aosp()
     }
 }
-
-task gemspec {
-    ext.gemspecFile = file("${project.name}.gemspec")
-    inputs.file "build.gradle"
-    outputs.file gemspecFile
-    doLast { gemspecFile.write($/
-Gem::Specification.new do |spec|
-  spec.name          = "${project.name}"
-  spec.version       = "${project.version}"
-  spec.authors       = ["dododo8m"]
-  spec.summary       = %[Soql_file input plugin for Embulk]
-  spec.description   = %[Loads records from Soql_file.]
-  spec.email         = ["taichiddt+8m@gmail.com"]
-  spec.licenses      = ["MIT"]
-  # TODO set this: spec.homepage      = "https://github.com/taichiddt+8m/embulk-input-soql_file"
-
-  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
-  spec.test_files    = spec.files.grep(%r"^(test|spec)/")
-  spec.require_paths = ["lib"]
-
-  #spec.add_dependency 'YOUR_GEM_DEPENDENCY', ['~> YOUR_GEM_DEPENDENCY_VERSION']
-  spec.add_development_dependency 'bundler', ['~> 1.0']
-  spec.add_development_dependency 'rake', ['~> 12.0']
-end
-/$)
-    }
-}
-clean { delete "${project.name}.gemspec" }
