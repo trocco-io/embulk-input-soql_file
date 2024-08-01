@@ -49,7 +49,8 @@ public class SoqlFilePlugin implements FileInputPlugin {
 
         try {
             ForceClient forceClient = new ForceClient(pluginTask);
-            List<String> recordKeyList = forceClient.query(pluginTask);
+            String soql = buildSoql(pluginTask);
+            List<String> recordKeyList = forceClient.query(pluginTask, soql);
             BulkConnection bulkConnection = forceClient.getBulkConnection();
             JobInfo jobInfo = forceClient.getJobInfo();
             BatchInfo batchInfo = forceClient.getBatchInfo();
@@ -69,5 +70,41 @@ public class SoqlFilePlugin implements FileInputPlugin {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private String buildSoql(PluginTask pluginTask) {
+        // 差分転送以外の場合
+        if (pluginTask.getIncremental() == false) {
+            if (pluginTask.getSoql().isPresent()) {
+                return pluginTask.getSoql().get();
+            } else if (pluginTask.getSelect().isPresent()) {
+                SoqlBuilder soqlBuilder =
+                        new SoqlBuilder(
+                                pluginTask.getSelect().get(),
+                                pluginTask.getObject(),
+                                pluginTask.getWhere());
+                return soqlBuilder.build();
+            } else {
+                throw new ConfigException("soql or select must be required");
+            }
+        }
+
+        // 差分転送で SOQL を組み立てれない場合
+        if (!pluginTask.getSelect().isPresent()) {
+            throw new ConfigException("select must be set if incremental is true");
+        }
+        if (pluginTask.getIncrementalColumns().isEmpty()) {
+            throw new ConfigException("incremental_columns must be set if incremental is true");
+        }
+
+        // SOQL を組み立てる
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(
+                        pluginTask.getSelect().get(),
+                        pluginTask.getObject(),
+                        pluginTask.getWhere(),
+                        pluginTask.getIncrementalColumns(),
+                        pluginTask.getLastRecord());
+        return soqlBuilder.build();
     }
 }

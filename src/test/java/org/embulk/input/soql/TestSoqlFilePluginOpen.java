@@ -44,8 +44,9 @@ public class TestSoqlFilePluginOpen {
     public void testOpen() throws Exception {
         final ConfigMapper configMapper = CONFIG_MAPPER_FACTORY.createConfigMapper();
         final PluginTask pluginTask = configMapper.map(config(), PluginTask.class);
+        final String soql = pluginTask.getSoql().get();
 
-        when(forceClient.query(pluginTask)).thenReturn(Arrays.asList("record1", "record2"));
+        when(forceClient.query(pluginTask, soql)).thenReturn(Arrays.asList("record1", "record2"));
         when(forceClient.getBulkConnection()).thenReturn(bulkConnection);
         when(forceClient.getJobInfo()).thenReturn(jobInfo);
         when(forceClient.getBatchInfo()).thenReturn(batchInfo);
