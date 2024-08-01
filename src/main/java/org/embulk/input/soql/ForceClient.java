@@ -59,12 +59,12 @@ public class ForceClient {
         return this.batchInfo;
     }
 
-    public List<String> query(PluginTask pluginTask)
+    public List<String> query(PluginTask pluginTask, String soql)
             throws AsyncApiException, InterruptedException, ExecutionException {
         this.jobInfo =
                 createJobInfo(
                         pluginTask.getObject(), pluginTask.getIncludeDeletedOrArchivedRecords());
-        this.batchInfo = createBatchInfo(pluginTask.getSoql(), jobInfo);
+        this.batchInfo = createBatchInfo(soql, jobInfo);
 
         CompletableFuture<String[]> result = execBatch(jobInfo, batchInfo);
         return Arrays.asList(result.get());

@@ -1,5 +1,6 @@
 package org.embulk.input.soql;
 
+import java.util.List;
 import java.util.Optional;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
@@ -46,5 +47,26 @@ interface PluginTask extends Task {
     boolean getIncludeDeletedOrArchivedRecords();
 
     @Config("soql")
-    String getSoql();
+    @ConfigDefault("null")
+    Optional<String> getSoql();
+
+    @Config("select")
+    @ConfigDefault("null")
+    Optional<String> getSelect();
+
+    @Config("where")
+    @ConfigDefault("null")
+    Optional<String> getWhere();
+
+    @Config("incremental")
+    @ConfigDefault("false")
+    boolean getIncremental();
+
+    @Config("incremental_columns")
+    @ConfigDefault("[]")
+    List<String> getIncrementalColumns();
+
+    @Config("last_record")
+    @ConfigDefault("null")
+    Optional<List<String>> getLastRecord();
 }
