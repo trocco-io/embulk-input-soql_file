@@ -16,11 +16,8 @@ import org.embulk.util.config.ConfigMapperFactory;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
 public class TestSoqlFilePluginOpen {
     private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY =
             ConfigMapperFactory.builder().addDefaultModules().build();

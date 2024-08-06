@@ -4,7 +4,6 @@ import java.util.Optional;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.config.Task;
-import org.embulk.util.config.units.SchemaConfig;
 
 interface PluginTask extends Task {
     @Config("auth_method")
@@ -48,8 +47,4 @@ interface PluginTask extends Task {
 
     @Config("soql")
     String getSoql();
-
-    @Config("columns")
-    @ConfigDefault("[]")
-    SchemaConfig getColumns();
 }
