@@ -1,16 +1,26 @@
 package org.embulk.input.soql;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
 import org.embulk.config.TaskSource;
+import org.embulk.spi.Exec;
 import org.embulk.spi.FileInputPlugin;
+import org.embulk.spi.TempFileSpace;
 import org.embulk.spi.TransactionalFileInput;
 import org.embulk.util.config.ConfigMapper;
 import org.embulk.util.config.ConfigMapperFactory;
@@ -20,22 +30,40 @@ import org.slf4j.LoggerFactory;
 
 public class SoqlFilePlugin implements FileInputPlugin {
     private final Logger logger = LoggerFactory.getLogger(SoqlFilePlugin.class);
+
     private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY =
             ConfigMapperFactory.builder().addDefaultModules().build();
+    private static final ConfigMapper CONFIG_MAPPER = CONFIG_MAPPER_FACTORY.createConfigMapper();
+    private static final TaskMapper TASK_MAPPER = CONFIG_MAPPER_FACTORY.createTaskMapper();
+
+    private List<Path> csvFilePaths;
 
     @Override
     public ConfigDiff transaction(ConfigSource config, FileInputPlugin.Control control) {
-        final ConfigMapper configMapper = CONFIG_MAPPER_FACTORY.createConfigMapper();
-        final PluginTask pluginTask = configMapper.map(config, PluginTask.class);
+        final PluginTask task = CONFIG_MAPPER.map(config, PluginTask.class);
 
-        return resume(pluginTask.toTaskSource(), 1, control);
+        return buildNextConfigDiff(task, control.run(task.toTaskSource(), 1));
     }
 
     @Override
     public ConfigDiff resume(
             TaskSource taskSource, int taskCount, FileInputPlugin.Control control) {
-        control.run(taskSource, taskCount);
-        return CONFIG_MAPPER_FACTORY.newConfigDiff();
+        final PluginTask task = TASK_MAPPER.map(taskSource, PluginTask.class);
+
+        return buildNextConfigDiff(task, control.run(taskSource, taskCount));
+    }
+
+    public ConfigDiff buildNextConfigDiff(PluginTask task, List<TaskReport> reports) {
+        final ConfigDiff next = CONFIG_MAPPER_FACTORY.newConfigDiff();
+
+        if (reports.size() > 0 && reports.get(0).has("last_record")) {
+            final TaskReport report = CONFIG_MAPPER_FACTORY.rebuildTaskReport(reports.get(0));
+            next.set("last_record", report.get(JsonNode.class, "last_record"));
+        } else if (task.getLastRecord().isPresent()) {
+            next.set("last_record", task.getLastRecord().get());
+        }
+
+        return next;
     }
 
     @Override
@@ -44,8 +72,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
 
     @Override
     public TransactionalFileInput open(TaskSource taskSource, int taskIndex) {
-        final TaskMapper taskMapper = CONFIG_MAPPER_FACTORY.createTaskMapper();
-        final PluginTask pluginTask = taskMapper.map(taskSource, PluginTask.class);
+        final PluginTask pluginTask = TASK_MAPPER.map(taskSource, PluginTask.class);
 
         try {
             ForceClient forceClient = new ForceClient(pluginTask);
@@ -54,15 +81,26 @@ public class SoqlFilePlugin implements FileInputPlugin {
             BulkConnection bulkConnection = forceClient.getBulkConnection();
             JobInfo jobInfo = forceClient.getJobInfo();
             BatchInfo batchInfo = forceClient.getBatchInfo();
-            TransactionalFileInput input =
-                    new SoqlFileInput(
-                            pluginTask,
-                            recordKeyList,
-                            bulkConnection,
-                            jobInfo.getId(),
-                            batchInfo.getId());
+
+            // すべての CSV をダウンロードして Embulk の一時ファイルとして保存する
+            TempFileSpace tempFileSpace = Exec.getTempFileSpace();
+            List<Path> csvFilePaths = new ArrayList<>(recordKeyList.size());
+            try {
+                for (Iterator<String> it = recordKeyList.iterator(); it.hasNext(); ) {
+                    Path csv = tempFileSpace.createTempFile().toPath();
+                    csvFilePaths.add(csv);
+                    InputStream input =
+                            bulkConnection.getQueryResultStream(
+                                    jobInfo.getId(), batchInfo.getId(), it.next());
+                    Files.copy(input, csv, REPLACE_EXISTING);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             bulkConnection.closeJob(jobInfo.getId());
-            return input;
+
+            return new CsvFileInput(pluginTask, csvFilePaths);
         } catch (AsyncApiException e) {
             logger.error(e.getMessage(), e);
             throw new ConfigException(e);
