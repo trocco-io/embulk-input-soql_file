@@ -23,8 +23,10 @@ public class CsvMaxValueFinder {
     @SuppressWarnings("unchecked")
     public List<String> findMaxValues() {
         List<Comparable<?>> maxValues = new ArrayList<>();
+        List<Boolean> invalidColumns = new ArrayList<>();
         for (int i = 0; i < targetColumnNames.size(); i++) {
             maxValues.add(null);
+            invalidColumns.add(false);
         }
 
         try {
@@ -56,7 +58,11 @@ public class CsvMaxValueFinder {
                             if (targetColumnIndex >= 0 && values.length > targetColumnIndex) {
                                 Comparable<?> value = parseValue(values[targetColumnIndex].trim());
                                 Comparable<?> currentMax = maxValues.get(i);
-                                if (currentMax == null
+                                // 異なるデータ型が混在する場合はその列を無効化する
+                                if (currentMax != null
+                                        && !currentMax.getClass().equals(value.getClass())) {
+                                    invalidColumns.set(i, true);
+                                } else if (currentMax == null
                                         || (value != null
                                                 && ((Comparable) value).compareTo(currentMax)
                                                         > 0)) {
@@ -71,7 +77,16 @@ public class CsvMaxValueFinder {
             System.err.println("Error processing CSV files: " + e.getMessage());
         }
 
-        return maxValues.stream().map(Object::toString).collect(Collectors.toList());
+        // 無効な列の結果はnullにする
+        for (int i = 0; i < maxValues.size(); i++) {
+            if (invalidColumns.get(i)) {
+                maxValues.set(i, null);
+            }
+        }
+        // Comparable<?> を String に変換して返却
+        return maxValues.stream()
+                .map(value -> value == null ? null : value.toString())
+                .collect(Collectors.toList());
     }
 
     private boolean isColumnPresent(String[] headers, String columnName) {
