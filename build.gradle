@@ -38,6 +38,7 @@ dependencies {
 
     compile "com.force.api:force-wsc:47.0.0"
     compile "com.force.api:force-partner-api:47.0.0"
+    compile "org.apache.commons:commons-csv:1.11.0"
 
     testImplementation "junit:junit:4.+"
     testImplementation "org.embulk:embulk-core:${embulkVersion}"
