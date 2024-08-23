@@ -23,9 +23,11 @@ public class CsvMaxValueFinder {
     @SuppressWarnings("unchecked")
     public List<String> findMaxValues() {
         List<Comparable<?>> maxValues = new ArrayList<>();
+        List<String> maxRawValues = new ArrayList<>();
         List<Boolean> invalidColumns = new ArrayList<>();
         for (int i = 0; i < targetColumnNames.size(); i++) {
             maxValues.add(null);
+            maxRawValues.add(null);
             invalidColumns.add(false);
         }
 
@@ -61,6 +63,7 @@ public class CsvMaxValueFinder {
                                 || (value != null
                                         && ((Comparable) value).compareTo(currentMax) > 0)) {
                             maxValues.set(i, value);
+                            maxRawValues.set(i, valueStr);
                         }
                     }
                 }
@@ -72,19 +75,23 @@ public class CsvMaxValueFinder {
         // 無効な列の結果はnullにする
         for (int i = 0; i < maxValues.size(); i++) {
             if (invalidColumns.get(i)) {
-                maxValues.set(i, null);
+                maxRawValues.set(i, null);
             }
         }
-        // Comparable<?> を String に変換して返却
-        return maxValues.stream()
-                .map(value -> value == null ? null : value.toString())
-                .collect(Collectors.toList());
+        return maxRawValues.stream().collect(Collectors.toList());
     }
 
     private Comparable<?> parseValue(String value) {
         try {
-            // 数値として解釈できる場合
+            // 整数として解釈できる場合
             return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            // 無視して次の解釈へ
+        }
+
+        try {
+            // 小数として解釈できる場合
+            return Double.parseDouble(value);
         } catch (NumberFormatException e) {
             // 無視して次の解釈へ
         }
@@ -96,7 +103,7 @@ public class CsvMaxValueFinder {
             // 無視して次の解釈へ
         }
 
-        // どちらでもなければ文字列として扱う
+        // いずれでもなければ文字列として扱う
         return value;
     }
 }
