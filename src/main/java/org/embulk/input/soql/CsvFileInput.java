@@ -9,6 +9,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.embulk.config.TaskReport;
+import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.TransactionalFileInput;
 import org.embulk.util.config.ConfigMapperFactory;
@@ -39,8 +40,10 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
                 Path csvFilePath = csvFilePaths.get(csvFilePaths.size() - 1);
                 List<String> lastRecords =
                         getLastRecords(csvFilePath, task.getIncrementalColumns());
-                report.set("last_record", lastRecords);
-            } catch (IOException e) {
+                if (!lastRecords.isEmpty()) {
+                    report.set("last_record", lastRecords);
+                }
+            } catch (IOException | DataException e) {
                 System.err.println(e.getMessage());
                 throw new RuntimeException(e);
             }
@@ -50,28 +53,26 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
     }
 
     protected List<String> getLastRecords(Path csvFilePath, List<String> columns)
-            throws IOException {
-        List<String> lastRecords = new ArrayList<>();
-        for (int i = 0; i < columns.size(); i++) {
-            lastRecords.add(null);
-        }
+            throws IOException, DataException {
+        List<String> values = new ArrayList<>();
         CSVFormat format =
                 CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build();
         Path path = csvFilePaths.get(csvFilePaths.size() - 1);
         CSVParser parser = CSVParser.parse(Files.newBufferedReader(path), format);
         List<CSVRecord> records = parser.getRecords();
-        if (records.isEmpty()) {
-            System.err.println("No records found in CSV file: " + path);
-            return lastRecords;
-        }
-        CSVRecord lastRecord = records.get(records.size() - 1);
-        for (int i = 0; i < columns.size(); i++) {
-            String value = lastRecord.get(columns.get(i));
-            if (value != null) {
-                lastRecords.set(i, value);
+        if (!records.isEmpty()) {
+            CSVRecord lastRecord = records.get(records.size() - 1);
+            for (String column : columns) {
+                String value = lastRecord.get(column);
+                if (value == null || value.isEmpty()) {
+                    throw new DataException(
+                            "incremental_columns can't include null values but the last row is null at column: "
+                                    + column);
+                }
+                values.add(value);
             }
         }
 
-        return lastRecords;
+        return values;
     }
 }
