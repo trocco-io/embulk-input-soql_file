@@ -9,12 +9,9 @@ import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.OperationEnum;
 import com.sforce.ws.ConnectionException;
-import com.sforce.ws.ConnectorConfig;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -33,18 +30,27 @@ public class ForceClient {
     private static final long PERIOD = 5;
     private static final int BATCH_STATUS_CHECK_INTERVAL = 10000;
 
+    private ForceConnector forceConnector;
     private BulkConnection bulkConnection;
     private JobInfo jobInfo;
     private BatchInfo batchInfo;
-
-    private final Map<AuthMethod, ConnectorConfigCreater> connectorConfigCreaters = new HashMap<>();
+    private PluginTask pluginTask;
 
     public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException {
-        setConnectorConfigCreaters(pluginTask);
-        ConnectorConfigCreater connectorConfigCreater =
-                connectorConfigCreaters.get(pluginTask.getAuthMethod());
-        ConnectorConfig connectorConfig = connectorConfigCreater.createConnectorConfig();
-        bulkConnection = new BulkConnection(connectorConfig);
+        this.pluginTask = pluginTask;
+        this.forceConnector = buildForceConnector(pluginTask);
+        this.bulkConnection = forceConnector.getBulkConnection();
+    }
+
+    private ForceConnector buildForceConnector(PluginTask pluginTask) {
+        switch (pluginTask.getAuthMethod()) {
+            case oauth:
+                return new OauthForceConnector(pluginTask);
+            case user_password:
+                return new UserPasswordForceConnector(pluginTask);
+            default:
+                throw new ConfigException("Unsupported auth_method: " + pluginTask.getAuthMethod());
+        }
     }
 
     public BulkConnection getBulkConnection() {
@@ -132,9 +138,5 @@ public class ForceClient {
         return jobInfo;
     }
 
-    private void setConnectorConfigCreaters(PluginTask pluginTask) {
-        connectorConfigCreaters.put(AuthMethod.oauth, new OauthConnectorConfigCreater(pluginTask));
-        connectorConfigCreaters.put(
-                AuthMethod.user_password, new UserPasswordConnectorConfigCreater(pluginTask));
     }
 }
