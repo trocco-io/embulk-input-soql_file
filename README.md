@@ -23,7 +23,7 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 - If you write SOQL directly,
   - **soql**: The SOQL query to execute (string)
 - If **soql** is not set,
-  - **select**: SELECT clauses of the SOQL query (string)
+  - **select**: SELECT clauses of the SOQL query (string, default: generates a list of all fields supported by the Bulk API)
   - **where**: WHERE clauses of the SOQL query (string)
 - **incremental**: Enables incremental loading if set true (boolean, default: false). See the "Incremental Loading" section below for details.
 - **incremental_columns**: Specifies the columns to use for incremental loading (array of strings). Supported column types are integers, strings, and timestamps.
@@ -49,6 +49,7 @@ in:
   parser:
     type: csv
     skip_header_lines: 1
+    allow_extra_columns: true
     newline: LF
     columns:
     - {name: Id, type: string}

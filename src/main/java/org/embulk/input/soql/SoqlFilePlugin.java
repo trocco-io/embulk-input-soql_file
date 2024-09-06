@@ -76,7 +76,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
         List<Path> csvFilePaths;
         try {
             ForceClient forceClient = createForceClient(pluginTask);
-            String soql = buildSoql(pluginTask);
+            String soql = buildSoql(pluginTask, forceClient);
             List<String> recordKeyList = forceClient.query(pluginTask, soql);
             BulkConnection bulkConnection = forceClient.getBulkConnection();
             JobInfo jobInfo = forceClient.getJobInfo();
@@ -110,35 +110,35 @@ public class SoqlFilePlugin implements FileInputPlugin {
         return new ForceClient(task);
     }
 
-    private String buildSoql(PluginTask pluginTask) {
-        // 差分転送以外の場合
-        if (pluginTask.getIncremental() == false) {
+    private String buildSoql(PluginTask pluginTask, ForceClient forceClient)
+            throws ConnectionException {
+        // 不正な incremental, soql, select の組み合わせを事前に検証する
+        if (pluginTask.getSoql().isPresent() && pluginTask.getSelect().isPresent()) {
+            throw new ConfigException("both soql and select are set");
+        }
+        if (pluginTask.getIncremental()) {
             if (pluginTask.getSoql().isPresent()) {
-                return pluginTask.getSoql().get();
-            } else if (pluginTask.getSelect().isPresent()) {
-                SoqlBuilder soqlBuilder =
-                        new SoqlBuilder(
-                                pluginTask.getSelect().get(),
-                                pluginTask.getObject(),
-                                pluginTask.getWhere());
-                return soqlBuilder.build();
-            } else {
-                throw new ConfigException("soql or select must be required");
+                throw new ConfigException("soql with incremental doesn't support");
+            }
+            if (pluginTask.getIncrementalColumns().isEmpty()) {
+                throw new ConfigException("incremental_columns must be set if incremental is true");
             }
         }
 
-        // 差分転送で SOQL を組み立てれない場合
-        if (!pluginTask.getSelect().isPresent()) {
-            throw new ConfigException("select must be set if incremental is true");
-        }
-        if (pluginTask.getIncrementalColumns().isEmpty()) {
-            throw new ConfigException("incremental_columns must be set if incremental is true");
+        // soql を利用する場合
+        if (!pluginTask.getIncremental() && pluginTask.getSoql().isPresent()) {
+            return pluginTask.getSoql().get();
         }
 
-        // SOQL を組み立てる
+        // select を利用する場合
+        String select = pluginTask.getSelect().orElse(null);
+        if (select == null) {
+            List<String> fileds = forceClient.describeObjectFieldNames(pluginTask.getObject());
+            select = String.join(",", fileds);
+        }
         SoqlBuilder soqlBuilder =
                 new SoqlBuilder(
-                        pluginTask.getSelect().get(),
+                        select,
                         pluginTask.getObject(),
                         pluginTask.getWhere(),
                         pluginTask.getIncrementalColumns(),

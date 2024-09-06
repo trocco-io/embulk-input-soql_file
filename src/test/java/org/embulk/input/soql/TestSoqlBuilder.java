@@ -3,26 +3,34 @@ package org.embulk.input.soql;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 
 public class TestSoqlBuilder {
     @Test
-    public void testBuild() {
+    public void testBuildWithEmptyIncrementalColumns() {
         String select = "Id, Name";
         String object = "Account";
-        SoqlBuilder soqlBuilder = new SoqlBuilder(select, object);
+        Optional<String> where = Optional.empty();
+        List<String> incrementalColumns = Collections.emptyList();
+        Optional<List<String>> lastRecords = Optional.empty();
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(select, object, where, incrementalColumns, lastRecords);
         String soql = soqlBuilder.build();
         assertEquals(soql, "SELECT Id, Name FROM Account");
     }
 
     @Test
-    public void testBuildWithWhere() {
+    public void testBuildWithWhereAndEmptyIncrementalColumns() {
         String select = "Id, Name";
         String object = "Account";
         Optional<String> where = Optional.of("Name != 'John Doe'");
-        SoqlBuilder soqlBuilder = new SoqlBuilder(select, object, where);
+        List<String> incrementalColumns = Collections.emptyList();
+        Optional<List<String>> lastRecords = Optional.empty();
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(select, object, where, incrementalColumns, lastRecords);
         String soql = soqlBuilder.build();
         assertEquals(soql, "SELECT Id, Name FROM Account WHERE Name != 'John Doe'");
     }

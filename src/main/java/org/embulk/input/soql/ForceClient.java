@@ -8,8 +8,13 @@ import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.OperationEnum;
+import com.sforce.soap.partner.DescribeSObjectResult;
+import com.sforce.soap.partner.Field;
+import com.sforce.soap.partner.FieldType;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -138,5 +143,28 @@ public class ForceClient {
         return jobInfo;
     }
 
+    public List<String> describeObjectFieldNames(String object) throws ConnectionException {
+        PartnerConnection partnerConnection = forceConnector.getPartnerConnection();
+        DescribeSObjectResult result = partnerConnection.describeSObject(object);
+        Field[] fields = result.getFields();
+        if (fields == null) {
+            throw new ConfigException("No fields found in object: " + object);
+        }
+        List<String> fieldNames = new ArrayList<>();
+        // exclude data types not supported by Bulk API
+        List<FieldType> unsupportedTypes =
+                Arrays.asList(
+                        FieldType.address,
+                        FieldType.anyType,
+                        FieldType.base64,
+                        FieldType.complexvalue,
+                        FieldType.encryptedstring,
+                        FieldType.location);
+        for (Field field : fields) {
+            if (!unsupportedTypes.contains(field.getType())) {
+                fieldNames.add(field.getName());
+            }
+        }
+        return fieldNames;
     }
 }

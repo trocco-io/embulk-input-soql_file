@@ -1,6 +1,5 @@
 package org.embulk.input.soql;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -12,24 +11,15 @@ public class SoqlBuilder {
     private List<String> incrementalColumns;
     private List<String> lastRecords;
 
-    public SoqlBuilder(String select, String object) {
-        this.select = select;
-        this.object = object;
-        this.incrementalColumns = new ArrayList<>();
-    }
-
-    public SoqlBuilder(String select, String object, Optional<String> where) {
-        this(select, object);
-        this.where = where.orElse(null);
-    }
-
     public SoqlBuilder(
             String select,
             String object,
             Optional<String> where,
             List<String> incrementalColumns,
             Optional<List<String>> lastRecords) {
-        this(select, object, where);
+        this.select = select;
+        this.object = object;
+        this.where = where.orElse(null);
         this.incrementalColumns = Objects.requireNonNull(incrementalColumns);
         this.lastRecords = lastRecords.orElse(null);
     }
