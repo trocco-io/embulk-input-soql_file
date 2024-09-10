@@ -8,6 +8,7 @@ public class SoqlBuilder {
     private String select;
     private String object;
     private String where;
+    private Integer limit;
     private List<String> incrementalColumns;
     private List<String> lastRecords;
 
@@ -15,11 +16,13 @@ public class SoqlBuilder {
             String select,
             String object,
             Optional<String> where,
+            Optional<Integer> limit,
             List<String> incrementalColumns,
             Optional<List<String>> lastRecords) {
         this.select = select;
         this.object = object;
         this.where = where.orElse(null);
+        this.limit = limit.orElse(null);
         this.incrementalColumns = Objects.requireNonNull(incrementalColumns);
         this.lastRecords = lastRecords.orElse(null);
     }
@@ -63,6 +66,9 @@ public class SoqlBuilder {
                     sb.append(", ");
                 }
             }
+        }
+        if (limit != null) {
+            sb.append(" LIMIT " + limit);
         }
 
         return sb.toString();

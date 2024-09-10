@@ -28,6 +28,7 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 - If **soql** is not set,
   - **select**: SELECT clauses of the SOQL query (string, default: generates a list of all fields supported by the Bulk API)
   - **where**: WHERE clauses of the SOQL query (string)
+  - **limit**: LIMIT clauses of the SOQL query (integer)
 - **incremental**: Enables incremental loading if set true (boolean, default: false). See the "Incremental Loading" section below for details.
 - **incremental_columns**: Specifies the columns to use for incremental loading (array of strings). Supported column types are integers, strings, and timestamps.
 - **last_record**: The values of the last record for incremental loading (array of objects). These values will be used to filter new records since the last run.

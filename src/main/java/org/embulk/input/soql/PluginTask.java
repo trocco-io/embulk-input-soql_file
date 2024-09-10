@@ -58,6 +58,10 @@ interface PluginTask extends Task {
     @ConfigDefault("null")
     Optional<String> getWhere();
 
+    @Config("limit")
+    @ConfigDefault("null")
+    Optional<Integer> getLimit();
+
     @Config("incremental")
     @ConfigDefault("false")
     boolean getIncremental();

@@ -141,6 +141,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
                         select,
                         pluginTask.getObject(),
                         pluginTask.getWhere(),
+                        pluginTask.getLimit(),
                         pluginTask.getIncrementalColumns(),
                         pluginTask.getLastRecord());
         return soqlBuilder.build();
