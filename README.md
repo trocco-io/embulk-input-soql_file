@@ -12,12 +12,15 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 ## Configuration Options
 
 - **type**: `soql_file` (string, required)
-- **username**: Login username for Salesforce (string, required)
-- **password**: Login password for Salesforce (string, required)
-- **security_token**: Salseforce security token (string, required)
-- **instance_url**: The instance URL for Salesforce (string, required)
+- Using username and password authentication:
+  - **username**: Login username for Salesforce (string)
+  - **password**: Login password for Salesforce (string)
+  - **security_token**: Salseforce security token (string)
+  - **auth_end_point**: The authentication endpoint URL (string, default: `https://login.salesforce.com/services/Soap/u/`)
+- Using OAuth access token:
+  - **access_token**: OAuth access token (string)
+  - **instance_url**: The instance URL for Salesforce (string)
 - **api_version**: Salesforce API version to use (string, default: 46.0)
-- **auth_end_point**: The authentication endpoint URL (string, default: `https://login.salesforce.com/services/Soap/u/`)
 - **object**: The name of the Salesforce object to query (string, required)
 - **include_deleted_or_archived_records**: If set true, includes deleted or archived records (boolean, default: false)
 - If you write SOQL directly,
@@ -33,19 +36,13 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 
 This plugin downloads CSV with Salesfroce Bulk API, so you need to use CSV parser.
 
-### Using SOQL Directly:
-
 ```yaml
 in:
   type: soql_file
   username: sample@example.com
   password: password
   security_token: ***
-  instance_url: https://sample.force.com
-  api_version: 41.0
-  auth_end_point: https://login.salesforce.com/services/Soap/u/
   object: Account
-  soql: "SELECT Id, Name, LastModifiedDate FROM Account"
   parser:
     type: csv
     skip_header_lines: 1
@@ -56,6 +53,18 @@ in:
     - {name: Name, type: string}
 ```
 
+### Using SOQL Directly:
+
+```yaml
+in:
+  type: soql_file
+  username: sample@example.com
+  password: password
+  security_token: ***
+  object: Account
+  soql: "SELECT Id, Name, LastModifiedDate FROM Account"
+```
+
 ### Using SELECT and WHERE Clauses:
 
 ```yaml
@@ -64,9 +73,6 @@ in:
   username: sample@example.com
   password: password
   security_token: ***
-  instance_url: https://sample.force.com
-  api_version: 41.0
-  auth_end_point: https://login.salesforce.com/services/Soap/u/
   object: Account
   select: "Id, Name, LastModifiedDate"
   where: "Name != 'John Doe'"
@@ -80,9 +86,6 @@ in:
   username: sample@example.com
   password: password
   security_token: ***
-  instance_url: https://sample.force.com
-  api_version: 41.0
-  auth_end_point: https://login.salesforce.com/services/Soap/u/
   object: Account
   select: "Id, Name, LastModifiedDate"
   where: "Name != 'John Doe'"
