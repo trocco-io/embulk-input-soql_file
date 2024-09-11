@@ -37,9 +37,12 @@ public class SoqlBuilder {
         // 差分転送のための WHERE 句を生成する:
         //
         //   WHERE
-        //     (incremental_columns[0] > last_record[0]
-        //      AND incremental_columns[1] > last_record[1]
-        //      AND ...)
+        //     ((incremental_columns[0] > last_record[0])
+        //      OR (incremental_columns[0] = last_record[0] AND incremental_columns[1] >
+        // last_record[1])
+        //      OR (incremental_columns[0] = last_record[0] AND incremental_columns[1] =
+        // last_record[1] AND incremental_columns[2] > last_record[2])
+        //      OR (...))
         if (incrementalColumns.size() > 0 && lastRecords != null && lastRecords.size() > 0) {
             if (where != null) {
                 sb.append(" AND ");
@@ -47,10 +50,24 @@ public class SoqlBuilder {
                 sb.append(" WHERE ");
             }
             sb.append("(");
+
             for (int i = 0; i < incrementalColumns.size(); i++) {
+                if (i > 0) {
+                    sb.append(" OR ");
+                }
+                if (incrementalColumns.size() > 1) {
+                    sb.append("(");
+                }
+                for (int j = 0; j < i; j++) {
+                    sb.append(
+                            incrementalColumns.get(j)
+                                    + " = "
+                                    + escape(lastRecords.get(j))
+                                    + " AND ");
+                }
                 sb.append(incrementalColumns.get(i) + " > " + escape(lastRecords.get(i)));
-                if (i != incrementalColumns.size() - 1) {
-                    sb.append(" AND ");
+                if (incrementalColumns.size() > 1) {
+                    sb.append(")");
                 }
             }
             sb.append(")");

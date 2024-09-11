@@ -122,7 +122,7 @@ public class TestSoqlBuilder {
         String soql = soqlBuilder.build();
         assertEquals(
                 soql,
-                "SELECT Id, Name FROM Account WHERE Name != 'John Doe' AND (Id > '1000' AND Name > 'M') ORDER BY Id ASC, Name ASC");
+                "SELECT Id, Name FROM Account WHERE Name != 'John Doe' AND ((Id > '1000') OR (Id = '1000' AND Name > 'M')) ORDER BY Id ASC, Name ASC");
     }
 
     @Test
@@ -138,6 +138,6 @@ public class TestSoqlBuilder {
         String soql = soqlBuilder.build();
         assertEquals(
                 soql,
-                "SELECT Id, Name FROM Account WHERE Name != 'John Doe' AND (Id > '1000' AND Name > 'M') ORDER BY Id ASC, Name ASC LIMIT 999");
+                "SELECT Id, Name FROM Account WHERE Name != 'John Doe' AND ((Id > '1000') OR (Id = '1000' AND Name > 'M')) ORDER BY Id ASC, Name ASC LIMIT 999");
     }
 }
