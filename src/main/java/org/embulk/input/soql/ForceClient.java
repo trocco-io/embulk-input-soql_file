@@ -151,14 +151,19 @@ public class ForceClient {
             throw new ConfigException("No fields found in object: " + object);
         }
         List<String> fieldNames = new ArrayList<>();
-        // exclude data types not supported by Bulk API
+        // Bulk API does not support some data types:
+        // * binary type - base64
+        // * complex type - address, location, complexvalue
+        //
+        // see also:
+        // https://help.salesforce.com/s/articleView?id=000382669&type=1
+        // https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/field_types.htm
+        // https://javadoc.io/doc/com.force.api/force-partner-api/50.0.0/com/sforce/soap/partner/FieldType.html
         List<FieldType> unsupportedTypes =
                 Arrays.asList(
                         FieldType.address,
-                        FieldType.anyType,
                         FieldType.base64,
                         FieldType.complexvalue,
-                        FieldType.encryptedstring,
                         FieldType.location);
         for (Field field : fields) {
             if (!unsupportedTypes.contains(field.getType())) {
