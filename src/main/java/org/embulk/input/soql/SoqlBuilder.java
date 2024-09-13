@@ -1,8 +1,11 @@
 package org.embulk.input.soql;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TimeZone;
 
 public class SoqlBuilder {
     private String select;
@@ -95,6 +98,41 @@ public class SoqlBuilder {
         if (value == null) {
             return "NULL";
         }
+        // SOQL では数値型、timestamp, date 型の値をクォートするとエラーになる
+        if (isNumeric(value) || isTimestamp(value) || isDate(value)) {
+            return value;
+        }
         return "'" + value.replace("'", "\\'") + "'";
+    }
+
+    private boolean isNumeric(String value) {
+        try {
+            Double.parseDouble(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private boolean isTimestamp(String value) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdf.parse(value);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+
+    private boolean isDate(String value) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdf.parse(value);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
     }
 }
