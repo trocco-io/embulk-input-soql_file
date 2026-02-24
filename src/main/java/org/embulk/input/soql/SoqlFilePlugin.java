@@ -40,6 +40,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
     @Override
     public ConfigDiff transaction(ConfigSource config, FileInputPlugin.Control control) {
         final PluginTask task = CONFIG_MAPPER.map(config, PluginTask.class);
+        validateConfig(task);
 
         return buildNextConfigDiff(task, control.run(task.toTaskSource(), 1));
     }
@@ -48,8 +49,27 @@ public class SoqlFilePlugin implements FileInputPlugin {
     public ConfigDiff resume(
             TaskSource taskSource, int taskCount, FileInputPlugin.Control control) {
         final PluginTask task = TASK_MAPPER.map(taskSource, PluginTask.class);
+        validateConfig(task);
 
         return buildNextConfigDiff(task, control.run(taskSource, taskCount));
+    }
+
+    private void validateConfig(PluginTask task) {
+        if (task.getSoql().isPresent() && task.getSelect().isPresent()) {
+            throw new ConfigException("both soql and select are set");
+        }
+        if (!task.getIncremental() && !task.getSoql().isPresent()) {
+            throw new ConfigException("soql must be set if incremental is false");
+        }
+        if (task.getIncremental()) {
+            if (task.getSoql().isPresent()) {
+                throw new ConfigException("soql with incremental doesn't support");
+            }
+            if (task.getIncrementalColumns().isEmpty()) {
+                throw new ConfigException(
+                        "incremental_columns must be set if incremental is true");
+            }
+        }
     }
 
     private ConfigDiff buildNextConfigDiff(PluginTask task, List<TaskReport> reports) {
@@ -122,21 +142,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
 
     private String buildSoql(PluginTask pluginTask, ForceClient forceClient)
             throws ConnectionException {
-        // 不正な incremental, soql, select の組み合わせを事前に検証する
-        if (pluginTask.getSoql().isPresent() && pluginTask.getSelect().isPresent()) {
-            throw new ConfigException("both soql and select are set");
-        }
-        if (!pluginTask.getIncremental() && !pluginTask.getSoql().isPresent()) {
-            throw new ConfigException("soql must be set if incremental is false");
-        }
-        if (pluginTask.getIncremental()) {
-            if (pluginTask.getSoql().isPresent()) {
-                throw new ConfigException("soql with incremental doesn't support");
-            }
-            if (pluginTask.getIncrementalColumns().isEmpty()) {
-                throw new ConfigException("incremental_columns must be set if incremental is true");
-            }
-        }
+        validateConfig(pluginTask);
 
         // soql を利用する場合
         if (!pluginTask.getIncremental() && pluginTask.getSoql().isPresent()) {
