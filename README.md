@@ -29,7 +29,7 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
   - **select**: SELECT clauses of the SOQL query (string, default: generates a list of all fields supported by the Bulk API)
   - **where**: WHERE clauses of the SOQL query (string)
   - **limit**: LIMIT clauses of the SOQL query (integer)
-- **incremental**: Enables incremental loading if set true (boolean, default: false). See the "Incremental Loading" section below for details. **Note: `soql` and `incremental` cannot be used together.** When using incremental loading, use `select`/`where`/`limit` instead of `soql`.
+- **incremental**: Enables incremental loading if set true (boolean, default: false). **Note: `soql` and `incremental` cannot be used together.** When using incremental loading, use `select`/`where`/`limit` instead of `soql`. An `ORDER BY` clause is automatically appended based on `incremental_columns`.
 - **incremental_columns**: Specifies the columns to use for incremental loading (array of strings, required when `incremental` is true). Supported column types are integers, strings, and timestamps.
 - **last_record**: The values of the last record for incremental loading (array of objects). These values will be used to filter new records since the last run.
 
@@ -66,20 +66,7 @@ in:
   soql: "SELECT Id, Name, LastModifiedDate FROM Account"
 ```
 
-### Using SELECT and WHERE Clauses:
-
-```yaml
-in:
-  type: soql_file
-  username: sample@example.com
-  password: password
-  security_token: ***
-  object: Account
-  select: "Id, Name, LastModifiedDate"
-  where: "Name != 'John Doe'"
-```
-
-### Using Incremental Loading:
+### Using SELECT and WHERE Clauses with Incremental Loading:
 
 ```yaml
 in:
