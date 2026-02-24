@@ -11,215 +11,219 @@ import org.junit.Test;
 public class TestSoqlBuilder {
     @Test
     public void testBuildWithEmptyIncrementalColumns() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Collections.emptyList();
-        Optional<List<String>> lastRecords = Optional.empty();
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(soql, "SELECT Id, Name FROM Account");
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Collections.emptyList(),
+                        Optional.empty());
+        assertEquals("SELECT Id, Name FROM Account", soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithEmptyIncrementalColumnsAndLimit() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.of(999);
-        List<String> incrementalColumns = Collections.emptyList();
-        Optional<List<String>> lastRecords = Optional.empty();
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(soql, "SELECT Id, Name FROM Account LIMIT 999");
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.empty(),
+                        Optional.of(999),
+                        Collections.emptyList(),
+                        Optional.empty());
+        assertEquals("SELECT Id, Name FROM Account LIMIT 999", soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithWhereAndEmptyIncrementalColumns() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.of("Name != 'John Doe'");
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Collections.emptyList();
-        Optional<List<String>> lastRecords = Optional.empty();
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(soql, "SELECT Id, Name FROM Account WHERE (Name != 'John Doe')");
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.of("Name != 'John Doe'"),
+                        Optional.empty(),
+                        Collections.emptyList(),
+                        Optional.empty());
+        assertEquals(
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe')", soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithIncrementalColumns() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Id");
-        Optional<List<String>> lastRecords = Optional.empty();
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(soql, "SELECT Id, Name FROM Account ORDER BY Id ASC");
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("Id"),
+                        Optional.empty());
+        assertEquals("SELECT Id, Name FROM Account ORDER BY Id ASC", soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithWhereAndIncrementalColumns() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.of("Name != 'John Doe'");
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Id");
-        Optional<List<String>> lastRecords = Optional.empty();
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(soql, "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') ORDER BY Id ASC");
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.of("Name != 'John Doe'"),
+                        Optional.empty(),
+                        Arrays.asList("Id"),
+                        Optional.empty());
+        assertEquals(
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') ORDER BY Id ASC",
+                soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithIncrementalColumnsAndLastRecords() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Id");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("0012v00002TtF31AAF"));
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("Id"),
+                        Optional.of(Arrays.asList("0012v00002TtF31AAF")));
         assertEquals(
-                soql,
-                "SELECT Id, Name FROM Account WHERE (Id > '0012v00002TtF31AAF') ORDER BY Id ASC");
+                "SELECT Id, Name FROM Account WHERE (Id > '0012v00002TtF31AAF') ORDER BY Id ASC",
+                soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithWhereAndIncrementalColumnsAndLastRecords() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.of("Name != 'John Doe'");
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Id");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("0012v00002TtF31AAF"));
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.of("Name != 'John Doe'"),
+                        Optional.empty(),
+                        Arrays.asList("Id"),
+                        Optional.of(Arrays.asList("0012v00002TtF31AAF")));
         assertEquals(
-                soql,
-                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND (Id > '0012v00002TtF31AAF') ORDER BY Id ASC");
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND (Id > '0012v00002TtF31AAF') ORDER BY Id ASC",
+                soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithWhereAndMultipleIncrementalColumnsAndLastRecords() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.of("Name != 'John Doe'");
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Id", "Name");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("0012v00002TtF31AAF", "M"));
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.of("Name != 'John Doe'"),
+                        Optional.empty(),
+                        Arrays.asList("Id", "Name"),
+                        Optional.of(Arrays.asList("0012v00002TtF31AAF", "M")));
         assertEquals(
-                soql,
-                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC");
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC",
+                soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithFullArguments() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.of("Name != 'John Doe'");
-        Optional<Integer> limit = Optional.of(999);
-        List<String> incrementalColumns = Arrays.asList("Id", "Name");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("0012v00002TtF31AAF", "M"));
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.of("Name != 'John Doe'"),
+                        Optional.of(999),
+                        Arrays.asList("Id", "Name"),
+                        Optional.of(Arrays.asList("0012v00002TtF31AAF", "M")));
         assertEquals(
-                soql,
-                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC LIMIT 999");
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC LIMIT 999",
+                soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithTimestampInLastRecords() {
-        String select = "Id, LastModifiedDate";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("LastModifiedDate");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("2024-01-02T03:04:05.000Z"));
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
+                new SoqlBuilder(
+                        "Id, LastModifiedDate",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("LastModifiedDate"),
+                        Optional.of(Arrays.asList("2024-01-02T03:04:05.000Z")));
         assertEquals(
-                soql,
-                "SELECT Id, LastModifiedDate FROM Account WHERE (LastModifiedDate > 2024-01-02T03:04:05.000Z) ORDER BY LastModifiedDate ASC");
-    }
-
-    @Test
-    public void testBuildWithSingleQuoteInLastRecords() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Name");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("O'Brien"));
-        SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(
-                soql,
-                "SELECT Id, Name FROM Account WHERE (Name > 'O\\'Brien') ORDER BY Name ASC");
-    }
-
-    @Test
-    public void testBuildWithBackslashInLastRecords() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Name");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("test\\value"));
-        SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(
-                soql,
-                "SELECT Id, Name FROM Account WHERE (Name > 'test\\\\value') ORDER BY Name ASC");
-    }
-
-    @Test
-    public void testBuildWithBackslashQuoteInLastRecords() {
-        String select = "Id, Name";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("Name");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("test\\'end"));
-        SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
-        assertEquals(
-                soql,
-                "SELECT Id, Name FROM Account WHERE (Name > 'test\\\\\\'end') ORDER BY Name ASC");
+                "SELECT Id, LastModifiedDate FROM Account WHERE (LastModifiedDate > 2024-01-02T03:04:05.000Z) ORDER BY LastModifiedDate ASC",
+                soqlBuilder.build());
     }
 
     @Test
     public void testBuildWithDateInLastRecords() {
-        String select = "Id, LastModifiedDate";
-        String object = "Account";
-        Optional<String> where = Optional.empty();
-        Optional<Integer> limit = Optional.empty();
-        List<String> incrementalColumns = Arrays.asList("LastModifiedDate");
-        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("2024-01-02"));
         SoqlBuilder soqlBuilder =
-                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
-        String soql = soqlBuilder.build();
+                new SoqlBuilder(
+                        "Id, LastModifiedDate",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("LastModifiedDate"),
+                        Optional.of(Arrays.asList("2024-01-02")));
         assertEquals(
-                soql,
-                "SELECT Id, LastModifiedDate FROM Account WHERE (LastModifiedDate > 2024-01-02) ORDER BY LastModifiedDate ASC");
+                "SELECT Id, LastModifiedDate FROM Account WHERE (LastModifiedDate > 2024-01-02) ORDER BY LastModifiedDate ASC",
+                soqlBuilder.build());
+    }
+
+    @Test
+    public void testBuildWithNumericLastRecords() {
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(
+                        "Id, Amount",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("Amount"),
+                        Optional.of(Arrays.asList("42")));
+        assertEquals(
+                "SELECT Id, Amount FROM Account WHERE (Amount > 42) ORDER BY Amount ASC",
+                soqlBuilder.build());
+    }
+
+    @Test
+    public void testBuildWithSingleQuoteInLastRecords() {
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("Name"),
+                        Optional.of(Arrays.asList("O'Brien")));
+        assertEquals(
+                "SELECT Id, Name FROM Account WHERE (Name > 'O\\'Brien') ORDER BY Name ASC",
+                soqlBuilder.build());
+    }
+
+    @Test
+    public void testBuildWithBackslashInLastRecords() {
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("Name"),
+                        Optional.of(Arrays.asList("test\\value")));
+        assertEquals(
+                "SELECT Id, Name FROM Account WHERE (Name > 'test\\\\value') ORDER BY Name ASC",
+                soqlBuilder.build());
+    }
+
+    @Test
+    public void testBuildWithBackslashQuoteInLastRecords() {
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(
+                        "Id, Name",
+                        "Account",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Arrays.asList("Name"),
+                        Optional.of(Arrays.asList("test\\'end")));
+        assertEquals(
+                "SELECT Id, Name FROM Account WHERE (Name > 'test\\\\\\'end') ORDER BY Name ASC",
+                soqlBuilder.build());
     }
 }

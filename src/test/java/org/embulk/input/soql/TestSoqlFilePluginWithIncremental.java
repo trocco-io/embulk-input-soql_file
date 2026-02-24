@@ -82,6 +82,64 @@ public class TestSoqlFilePluginWithIncremental {
         assertEquals("999", configDiff.get(List.class, "last_record").get(0));
     }
 
+    @Test
+    public void testTransactionPreservesLastRecordWhenReportsEmpty() {
+        ConfigSource configWithLastRecord =
+                CONFIG_MAPPER_FACTORY
+                        .newConfigSource()
+                        .set("object", "Account")
+                        .set("select", "Id,Name,Timestamp")
+                        .set("incremental", true)
+                        .set("incremental_columns", Arrays.asList("Id"))
+                        .set("last_record", Arrays.asList("500"));
+
+        ConfigDiff configDiff =
+                plugin.transaction(
+                        configWithLastRecord,
+                        new FileInputPlugin.Control() {
+                            @Override
+                            public List<TaskReport> run(
+                                    final TaskSource taskSource, final int taskCount) {
+                                return new ArrayList<>();
+                            }
+                        });
+
+        assertTrue(configDiff.has("last_record"));
+        assertEquals(1, configDiff.get(List.class, "last_record").size());
+        assertEquals("500", configDiff.get(List.class, "last_record").get(0));
+    }
+
+    @Test
+    public void testTransactionPreservesLastRecordWhenReportHasNoLastRecord() {
+        ConfigSource configWithLastRecord =
+                CONFIG_MAPPER_FACTORY
+                        .newConfigSource()
+                        .set("object", "Account")
+                        .set("select", "Id,Name,Timestamp")
+                        .set("incremental", true)
+                        .set("incremental_columns", Arrays.asList("Id"))
+                        .set("last_record", Arrays.asList("500"));
+
+        TaskReport emptyReport = CONFIG_MAPPER_FACTORY.newTaskReport();
+        List<TaskReport> reports = new ArrayList<>();
+        reports.add(emptyReport);
+
+        ConfigDiff configDiff =
+                plugin.transaction(
+                        configWithLastRecord,
+                        new FileInputPlugin.Control() {
+                            @Override
+                            public List<TaskReport> run(
+                                    final TaskSource taskSource, final int taskCount) {
+                                return reports;
+                            }
+                        });
+
+        assertTrue(configDiff.has("last_record"));
+        assertEquals(1, configDiff.get(List.class, "last_record").size());
+        assertEquals("500", configDiff.get(List.class, "last_record").get(0));
+    }
+
     private ConfigSource config() {
         return CONFIG_MAPPER_FACTORY
                 .newConfigSource()

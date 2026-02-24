@@ -2,6 +2,7 @@ package org.embulk.input.soql;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 import com.sforce.async.AsyncApiException;
@@ -118,6 +119,7 @@ public class TestSoqlFilePluginOpen {
 
         try {
             plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
         } catch (Exception e) {
             assertTrue(e.getCause() instanceof ConfigException);
         }
@@ -134,7 +136,8 @@ public class TestSoqlFilePluginOpen {
         final PluginTask pluginTask = CONFIG_MAPPER.map(config, PluginTask.class);
 
         try {
-            TransactionalFileInput result = plugin.open(pluginTask.toTaskSource(), 0);
+            plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
         } catch (Exception e) {
             assertTrue(e.getCause() instanceof ConfigException);
         }
@@ -151,7 +154,8 @@ public class TestSoqlFilePluginOpen {
         final PluginTask pluginTask = CONFIG_MAPPER.map(config, PluginTask.class);
 
         try {
-            TransactionalFileInput result = plugin.open(pluginTask.toTaskSource(), 0);
+            plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
         } catch (Exception e) {
             assertTrue(e.getCause() instanceof ConfigException);
         }
@@ -167,7 +171,8 @@ public class TestSoqlFilePluginOpen {
         final PluginTask pluginTask = CONFIG_MAPPER.map(config, PluginTask.class);
 
         try {
-            TransactionalFileInput result = plugin.open(pluginTask.toTaskSource(), 0);
+            plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
         } catch (Exception e) {
             assertTrue(e.getCause() instanceof ConfigException);
         }
