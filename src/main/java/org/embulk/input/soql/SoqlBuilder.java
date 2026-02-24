@@ -104,7 +104,7 @@ public class SoqlBuilder {
         if (isNumeric(value) || isTimestamp(value) || isDate(value)) {
             return value;
         }
-        return "'" + value.replace("'", "\\'") + "'";
+        return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'";
     }
 
     private boolean isNumeric(String value) {

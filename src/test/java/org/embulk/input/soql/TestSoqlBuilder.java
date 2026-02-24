@@ -160,6 +160,54 @@ public class TestSoqlBuilder {
     }
 
     @Test
+    public void testBuildWithSingleQuoteInLastRecords() {
+        String select = "Id, Name";
+        String object = "Account";
+        Optional<String> where = Optional.empty();
+        Optional<Integer> limit = Optional.empty();
+        List<String> incrementalColumns = Arrays.asList("Name");
+        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("O'Brien"));
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
+        String soql = soqlBuilder.build();
+        assertEquals(
+                soql,
+                "SELECT Id, Name FROM Account WHERE (Name > 'O\\'Brien') ORDER BY Name ASC");
+    }
+
+    @Test
+    public void testBuildWithBackslashInLastRecords() {
+        String select = "Id, Name";
+        String object = "Account";
+        Optional<String> where = Optional.empty();
+        Optional<Integer> limit = Optional.empty();
+        List<String> incrementalColumns = Arrays.asList("Name");
+        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("test\\value"));
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
+        String soql = soqlBuilder.build();
+        assertEquals(
+                soql,
+                "SELECT Id, Name FROM Account WHERE (Name > 'test\\\\value') ORDER BY Name ASC");
+    }
+
+    @Test
+    public void testBuildWithBackslashQuoteInLastRecords() {
+        String select = "Id, Name";
+        String object = "Account";
+        Optional<String> where = Optional.empty();
+        Optional<Integer> limit = Optional.empty();
+        List<String> incrementalColumns = Arrays.asList("Name");
+        Optional<List<String>> lastRecords = Optional.of(Arrays.asList("test\\'end"));
+        SoqlBuilder soqlBuilder =
+                new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
+        String soql = soqlBuilder.build();
+        assertEquals(
+                soql,
+                "SELECT Id, Name FROM Account WHERE (Name > 'test\\\\\\'end') ORDER BY Name ASC");
+    }
+
+    @Test
     public void testBuildWithDateInLastRecords() {
         String select = "Id, LastModifiedDate";
         String object = "Account";
