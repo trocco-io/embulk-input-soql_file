@@ -37,7 +37,7 @@ public class SoqlBuilder {
         sb.append("SELECT " + select);
         sb.append(" FROM " + object);
         if (where != null) {
-            sb.append(" WHERE " + where);
+            sb.append(" WHERE (" + where + ")");
         }
         // 差分転送のための WHERE 句を生成する:
         //

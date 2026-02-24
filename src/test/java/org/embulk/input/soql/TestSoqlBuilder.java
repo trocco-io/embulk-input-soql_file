@@ -48,7 +48,7 @@ public class TestSoqlBuilder {
         SoqlBuilder soqlBuilder =
                 new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
         String soql = soqlBuilder.build();
-        assertEquals(soql, "SELECT Id, Name FROM Account WHERE Name != 'John Doe'");
+        assertEquals(soql, "SELECT Id, Name FROM Account WHERE (Name != 'John Doe')");
     }
 
     @Test
@@ -76,7 +76,7 @@ public class TestSoqlBuilder {
         SoqlBuilder soqlBuilder =
                 new SoqlBuilder(select, object, where, limit, incrementalColumns, lastRecords);
         String soql = soqlBuilder.build();
-        assertEquals(soql, "SELECT Id, Name FROM Account WHERE Name != 'John Doe' ORDER BY Id ASC");
+        assertEquals(soql, "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') ORDER BY Id ASC");
     }
 
     @Test
@@ -108,7 +108,7 @@ public class TestSoqlBuilder {
         String soql = soqlBuilder.build();
         assertEquals(
                 soql,
-                "SELECT Id, Name FROM Account WHERE Name != 'John Doe' AND (Id > '0012v00002TtF31AAF') ORDER BY Id ASC");
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND (Id > '0012v00002TtF31AAF') ORDER BY Id ASC");
     }
 
     @Test
@@ -124,7 +124,7 @@ public class TestSoqlBuilder {
         String soql = soqlBuilder.build();
         assertEquals(
                 soql,
-                "SELECT Id, Name FROM Account WHERE Name != 'John Doe' AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC");
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC");
     }
 
     @Test
@@ -140,7 +140,7 @@ public class TestSoqlBuilder {
         String soql = soqlBuilder.build();
         assertEquals(
                 soql,
-                "SELECT Id, Name FROM Account WHERE Name != 'John Doe' AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC LIMIT 999");
+                "SELECT Id, Name FROM Account WHERE (Name != 'John Doe') AND ((Id > '0012v00002TtF31AAF') OR (Id = '0012v00002TtF31AAF' AND Name > 'M')) ORDER BY Id ASC, Name ASC LIMIT 999");
     }
 
     @Test
