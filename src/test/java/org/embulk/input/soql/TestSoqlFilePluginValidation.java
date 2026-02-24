@@ -1,7 +1,6 @@
 package org.embulk.input.soql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigSource;
@@ -27,8 +26,7 @@ public class TestSoqlFilePluginValidation {
 
     @Test(expected = ConfigException.class)
     public void testTransactionWithoutSoqlAndIncrementalFalse() {
-        ConfigSource config =
-                CONFIG_MAPPER_FACTORY.newConfigSource().set("object", "Account");
+        ConfigSource config = CONFIG_MAPPER_FACTORY.newConfigSource().set("object", "Account");
         plugin.transaction(config, new NoOpControl());
     }
 
@@ -66,8 +64,7 @@ public class TestSoqlFilePluginValidation {
 
     @Test(expected = ConfigException.class)
     public void testResumeWithoutSoqlAndIncrementalFalse() {
-        ConfigSource config =
-                CONFIG_MAPPER_FACTORY.newConfigSource().set("object", "Account");
+        ConfigSource config = CONFIG_MAPPER_FACTORY.newConfigSource().set("object", "Account");
         PluginTask task = CONFIG_MAPPER.map(config, PluginTask.class);
         plugin.resume(task.toTaskSource(), 0, new NoOpControl());
     }

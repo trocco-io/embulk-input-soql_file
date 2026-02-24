@@ -66,8 +66,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
                 throw new ConfigException("soql with incremental doesn't support");
             }
             if (task.getIncrementalColumns().isEmpty()) {
-                throw new ConfigException(
-                        "incremental_columns must be set if incremental is true");
+                throw new ConfigException("incremental_columns must be set if incremental is true");
             }
         }
     }

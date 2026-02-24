@@ -23,12 +23,20 @@ class OauthForceConnector implements ForceConnector {
         }
 
         ConnectorConfig config = new ConnectorConfig();
-        config.setSessionId(pluginTask.getAccessToken()
-                .orElseThrow(() -> new ConfigException("access_token is required for oauth")));
+        config.setSessionId(
+                pluginTask
+                        .getAccessToken()
+                        .orElseThrow(
+                                () -> new ConfigException("access_token is required for oauth")));
         String restEndpoint =
-                pluginTask.getInstanceUrl()
-                        .orElseThrow(() -> new ConfigException("instance_url is required for oauth"))
-                        + "/services/async/" + pluginTask.getApiVersion();
+                pluginTask
+                                .getInstanceUrl()
+                                .orElseThrow(
+                                        () ->
+                                                new ConfigException(
+                                                        "instance_url is required for oauth"))
+                        + "/services/async/"
+                        + pluginTask.getApiVersion();
         config.setRestEndpoint(restEndpoint);
         config.setCompression(true);
         config.setTraceMessage(false);
@@ -45,11 +53,18 @@ class OauthForceConnector implements ForceConnector {
         }
 
         ConnectorConfig partnerConfig = new ConnectorConfig();
-        partnerConfig.setSessionId(pluginTask.getAccessToken()
-                .orElseThrow(() -> new ConfigException("access_token is required for oauth")));
+        partnerConfig.setSessionId(
+                pluginTask
+                        .getAccessToken()
+                        .orElseThrow(
+                                () -> new ConfigException("access_token is required for oauth")));
         partnerConfig.setServiceEndpoint(
-                pluginTask.getInstanceUrl()
-                        .orElseThrow(() -> new ConfigException("instance_url is required for oauth"))
+                pluginTask
+                                .getInstanceUrl()
+                                .orElseThrow(
+                                        () ->
+                                                new ConfigException(
+                                                        "instance_url is required for oauth"))
                         + "/services/Soap/u/"
                         + pluginTask.getApiVersion());
         partnerConnection = new PartnerConnection(partnerConfig);

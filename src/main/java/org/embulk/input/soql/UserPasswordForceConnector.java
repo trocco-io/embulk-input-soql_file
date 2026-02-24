@@ -45,16 +45,33 @@ class UserPasswordForceConnector implements ForceConnector {
         }
 
         ConnectorConfig partnerConfig = new ConnectorConfig();
-        partnerConfig.setUsername(pluginTask.getUsername()
-                .orElseThrow(() -> new ConfigException("username is required for user_password")));
+        partnerConfig.setUsername(
+                pluginTask
+                        .getUsername()
+                        .orElseThrow(
+                                () ->
+                                        new ConfigException(
+                                                "username is required for user_password")));
         partnerConfig.setPassword(
-                pluginTask.getPassword()
-                        .orElseThrow(() -> new ConfigException("password is required for user_password"))
-                        + pluginTask.getSecurityToken()
-                                .orElseThrow(() -> new ConfigException("security_token is required for user_password")));
+                pluginTask
+                                .getPassword()
+                                .orElseThrow(
+                                        () ->
+                                                new ConfigException(
+                                                        "password is required for user_password"))
+                        + pluginTask
+                                .getSecurityToken()
+                                .orElseThrow(
+                                        () ->
+                                                new ConfigException(
+                                                        "security_token is required for user_password")));
         partnerConfig.setAuthEndpoint(
-                pluginTask.getAuthEndPoint()
-                        .orElseThrow(() -> new ConfigException("auth_end_point is required for user_password"))
+                pluginTask
+                                .getAuthEndPoint()
+                                .orElseThrow(
+                                        () ->
+                                                new ConfigException(
+                                                        "auth_end_point is required for user_password"))
                         + pluginTask.getApiVersion());
         partnerConnection = new PartnerConnection(partnerConfig);
 
