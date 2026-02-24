@@ -38,6 +38,10 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
 
         if (task.getIncremental()) {
             try {
+                // NOTE: 最後のファイルのみから last_record を取得している。Bulk API が結果チャンクを
+                // ORDER BY 順に返す保証は公式ドキュメントに明記されていないため、複数チャンク時に
+                // 最後のファイルが最大値を含まない可能性がある。問題が発生した場合は全ファイルの
+                // 最終レコードを比較して最大値を取得する方式への変更を検討すること。
                 Path csvFilePath = csvFilePaths.get(csvFilePaths.size() - 1);
                 List<String> lastRecords =
                         getLastRecords(csvFilePath, task.getIncrementalColumns());
