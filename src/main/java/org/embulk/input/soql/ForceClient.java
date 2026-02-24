@@ -39,10 +39,8 @@ public class ForceClient {
     private BulkConnection bulkConnection;
     private JobInfo jobInfo;
     private BatchInfo batchInfo;
-    private PluginTask pluginTask;
 
     public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException {
-        this.pluginTask = pluginTask;
         this.forceConnector = buildForceConnector(pluginTask);
         this.bulkConnection = forceConnector.getBulkConnection();
     }
@@ -120,7 +118,8 @@ public class ForceClient {
     }
 
     private BatchInfo createBatchInfo(String soql, JobInfo jobInfo) throws AsyncApiException {
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(soql.getBytes());
+        ByteArrayInputStream byteArrayInputStream =
+                new ByteArrayInputStream(soql.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         BatchInfo batchInfo = bulkConnection.createBatchFromStream(jobInfo, byteArrayInputStream);
         logger.info("batch_id is {}, job_id is {}", batchInfo.getId(), batchInfo.getJobId());
         return batchInfo;

@@ -5,6 +5,7 @@ import com.sforce.async.BulkConnection;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import org.embulk.config.ConfigException;
 
 class UserPasswordForceConnector implements ForceConnector {
     private final PluginTask pluginTask;
@@ -44,11 +45,17 @@ class UserPasswordForceConnector implements ForceConnector {
         }
 
         ConnectorConfig partnerConfig = new ConnectorConfig();
-        partnerConfig.setUsername(pluginTask.getUsername().get());
+        partnerConfig.setUsername(pluginTask.getUsername()
+                .orElseThrow(() -> new ConfigException("username is required for user_password")));
         partnerConfig.setPassword(
-                pluginTask.getPassword().get() + pluginTask.getSecurityToken().get());
+                pluginTask.getPassword()
+                        .orElseThrow(() -> new ConfigException("password is required for user_password"))
+                        + pluginTask.getSecurityToken()
+                                .orElseThrow(() -> new ConfigException("security_token is required for user_password")));
         partnerConfig.setAuthEndpoint(
-                pluginTask.getAuthEndPoint().get() + pluginTask.getApiVersion());
+                pluginTask.getAuthEndPoint()
+                        .orElseThrow(() -> new ConfigException("auth_end_point is required for user_password"))
+                        + pluginTask.getApiVersion());
         partnerConnection = new PartnerConnection(partnerConfig);
 
         return partnerConnection;

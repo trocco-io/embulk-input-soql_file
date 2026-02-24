@@ -12,10 +12,11 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 ## Configuration Options
 
 - **type**: `soql_file` (string, required)
-- Using username and password authentication:
+- **auth_method**: Authentication method to use (string, default: `user_password`). Available values: `user_password`, `oauth`.
+- Using username and password authentication (`auth_method: user_password`):
   - **username**: Login username for Salesforce (string)
   - **password**: Login password for Salesforce (string)
-  - **security_token**: Salseforce security token (string)
+  - **security_token**: Salesforce security token (string)
   - **auth_end_point**: The authentication endpoint URL (string, default: `https://login.salesforce.com/services/Soap/u/`)
 - Using OAuth access token:
   - **access_token**: OAuth access token (string)
@@ -35,7 +36,7 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 
 ## Example Configurations
 
-This plugin downloads CSV with Salesfroce Bulk API, so you need to use CSV parser.
+This plugin downloads CSV with Salesforce Bulk API, so you need to use CSV parser.
 
 ```yaml
 in:

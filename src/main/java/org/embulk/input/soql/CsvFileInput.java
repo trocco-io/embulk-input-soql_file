@@ -20,8 +20,8 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
     private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY =
             ConfigMapperFactory.builder().addDefaultModules().build();
 
-    private PluginTask task;
-    private List<Path> csvFilePaths;
+    private final PluginTask task;
+    private final List<Path> csvFilePaths;
 
     public CsvFileInput(PluginTask task, List<Path> csvFilePaths) {
         super(Exec.getBufferAllocator(), new CsvFileProvider(csvFilePaths));
@@ -70,7 +70,13 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
             }
             if (lastRecord != null) {
                 for (String column : columns) {
-                    String value = lastRecord.get(column);
+                    String value;
+                    try {
+                        value = lastRecord.get(column);
+                    } catch (IllegalArgumentException e) {
+                        throw new DataException(
+                                "incremental column '" + column + "' not found in CSV header", e);
+                    }
                     if (value == null || value.isEmpty()) {
                         throw new DataException(
                                 "incremental_columns can't include null values but the last row is null at column: "

@@ -99,7 +99,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
         try {
             ForceClient forceClient = createForceClient(pluginTask);
             String soql = buildSoql(pluginTask, forceClient);
-            logger.debug("SOQL: " + soql);
+            logger.debug("SOQL: {}", soql);
             List<String> recordKeyList = forceClient.query(pluginTask, soql);
             bulkConnection = forceClient.getBulkConnection();
             jobInfo = forceClient.getJobInfo();
@@ -152,8 +152,8 @@ public class SoqlFilePlugin implements FileInputPlugin {
         // select を利用する場合
         String select = pluginTask.getSelect().orElse(null);
         if (select == null) {
-            List<String> fileds = forceClient.describeObjectFieldNames(pluginTask.getObject());
-            select = String.join(",", fileds);
+            List<String> fields = forceClient.describeObjectFieldNames(pluginTask.getObject());
+            select = String.join(",", fields);
         }
         SoqlBuilder soqlBuilder =
                 new SoqlBuilder(
