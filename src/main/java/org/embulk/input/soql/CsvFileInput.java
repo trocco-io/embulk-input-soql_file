@@ -36,7 +36,7 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
     public TaskReport commit() {
         TaskReport report = CONFIG_MAPPER_FACTORY.newTaskReport();
 
-        if (task.getIncremental()) {
+        if (task.getIncremental() && !csvFilePaths.isEmpty()) {
             try {
                 // NOTE: 最後のファイルのみから last_record を取得している。Bulk API が結果チャンクを
                 // ORDER BY 順に返す保証は公式ドキュメントに明記されていないため、複数チャンク時に
