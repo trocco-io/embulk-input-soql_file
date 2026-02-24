@@ -74,13 +74,15 @@ public class SoqlFilePlugin implements FileInputPlugin {
         final PluginTask pluginTask = TASK_MAPPER.map(taskSource, PluginTask.class);
 
         List<Path> csvFilePaths;
+        JobInfo jobInfo = null;
+        BulkConnection bulkConnection = null;
         try {
             ForceClient forceClient = createForceClient(pluginTask);
             String soql = buildSoql(pluginTask, forceClient);
             logger.debug("SOQL: " + soql);
             List<String> recordKeyList = forceClient.query(pluginTask, soql);
-            BulkConnection bulkConnection = forceClient.getBulkConnection();
-            JobInfo jobInfo = forceClient.getJobInfo();
+            bulkConnection = forceClient.getBulkConnection();
+            jobInfo = forceClient.getJobInfo();
             BatchInfo batchInfo = forceClient.getBatchInfo();
 
             TempFileSpace tempFileSpace = Exec.getTempFileSpace();
@@ -88,19 +90,26 @@ public class SoqlFilePlugin implements FileInputPlugin {
             for (Iterator<String> it = recordKeyList.iterator(); it.hasNext(); ) {
                 Path csv = tempFileSpace.createTempFile().toPath();
                 csvFilePaths.add(csv);
-                InputStream input =
+                try (InputStream input =
                         bulkConnection.getQueryResultStream(
-                                jobInfo.getId(), batchInfo.getId(), it.next());
-                Files.copy(input, csv, REPLACE_EXISTING);
+                                jobInfo.getId(), batchInfo.getId(), it.next())) {
+                    Files.copy(input, csv, REPLACE_EXISTING);
+                }
             }
-
-            bulkConnection.closeJob(jobInfo.getId());
         } catch (AsyncApiException e) {
             logger.error(e.getMessage(), e);
             throw new ConfigException(e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            if (bulkConnection != null && jobInfo != null) {
+                try {
+                    bulkConnection.closeJob(jobInfo.getId());
+                } catch (Exception e) {
+                    logger.warn("Failed to close Bulk API job", e);
+                }
+            }
         }
 
         return new CsvFileInput(pluginTask, csvFilePaths);
