@@ -1,5 +1,6 @@
 package org.embulk.input.soql;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,7 +45,6 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
                     report.set("last_record", lastRecords);
                 }
             } catch (IOException | DataException e) {
-                System.err.println(e.getMessage());
                 throw new RuntimeException(e);
             }
         }
@@ -57,19 +57,23 @@ public class CsvFileInput extends InputStreamFileInput implements TransactionalF
         List<String> values = new ArrayList<>();
         CSVFormat format =
                 CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build();
-        Path path = csvFilePaths.get(csvFilePaths.size() - 1);
-        CSVParser parser = CSVParser.parse(Files.newBufferedReader(path), format);
-        List<CSVRecord> records = parser.getRecords();
-        if (!records.isEmpty()) {
-            CSVRecord lastRecord = records.get(records.size() - 1);
-            for (String column : columns) {
-                String value = lastRecord.get(column);
-                if (value == null || value.isEmpty()) {
-                    throw new DataException(
-                            "incremental_columns can't include null values but the last row is null at column: "
-                                    + column);
+
+        try (BufferedReader reader = Files.newBufferedReader(csvFilePath);
+                CSVParser parser = new CSVParser(reader, format)) {
+            CSVRecord lastRecord = null;
+            for (CSVRecord record : parser) {
+                lastRecord = record;
+            }
+            if (lastRecord != null) {
+                for (String column : columns) {
+                    String value = lastRecord.get(column);
+                    if (value == null || value.isEmpty()) {
+                        throw new DataException(
+                                "incremental_columns can't include null values but the last row is null at column: "
+                                        + column);
+                    }
+                    values.add(value);
                 }
-                values.add(value);
             }
         }
 

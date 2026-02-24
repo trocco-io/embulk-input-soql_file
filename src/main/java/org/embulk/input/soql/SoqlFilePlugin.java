@@ -117,6 +117,9 @@ public class SoqlFilePlugin implements FileInputPlugin {
         if (pluginTask.getSoql().isPresent() && pluginTask.getSelect().isPresent()) {
             throw new ConfigException("both soql and select are set");
         }
+        if (!pluginTask.getIncremental() && !pluginTask.getSoql().isPresent()) {
+            throw new ConfigException("soql must be set if incremental is false");
+        }
         if (pluginTask.getIncremental()) {
             if (pluginTask.getSoql().isPresent()) {
                 throw new ConfigException("soql with incremental doesn't support");

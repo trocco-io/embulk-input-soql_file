@@ -1,11 +1,13 @@
 package org.embulk.input.soql;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TimeZone;
 
 public class SoqlBuilder {
     private String select;
@@ -116,22 +118,23 @@ public class SoqlBuilder {
 
     private boolean isTimestamp(String value) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            sdf.parse(value);
+            ZonedDateTime.parse(value, DateTimeFormatter.ISO_ZONED_DATE_TIME);
             return true;
-        } catch (ParseException e) {
-            return false;
+        } catch (DateTimeParseException e) {
+            try {
+                Instant.parse(value);
+                return true;
+            } catch (DateTimeParseException e2) {
+                return false;
+            }
         }
     }
 
     private boolean isDate(String value) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            sdf.parse(value);
+            LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
             return true;
-        } catch (ParseException e) {
+        } catch (DateTimeParseException e) {
             return false;
         }
     }

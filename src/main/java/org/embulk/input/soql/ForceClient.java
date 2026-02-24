@@ -170,6 +170,12 @@ public class ForceClient {
                 fieldNames.add(field.getName());
             }
         }
+        if (fieldNames.isEmpty()) {
+            throw new ConfigException(
+                    "No supported fields found in object: "
+                            + object
+                            + ". All fields may be of unsupported types (address, base64, complexvalue, location).");
+        }
         return fieldNames;
     }
 }
