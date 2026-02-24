@@ -24,13 +24,13 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 - **object**: The name of the Salesforce object to query (string, required)
 - **include_deleted_or_archived_records**: If set true, includes deleted or archived records (boolean, default: false)
 - If you write SOQL directly,
-  - **soql**: The SOQL query to execute (string)
-- If **soql** is not set,
+  - **soql**: The SOQL query to execute (string, required when `incremental` is false)
+- If using incremental loading (`incremental: true`),
   - **select**: SELECT clauses of the SOQL query (string, default: generates a list of all fields supported by the Bulk API)
   - **where**: WHERE clauses of the SOQL query (string)
   - **limit**: LIMIT clauses of the SOQL query (integer)
-- **incremental**: Enables incremental loading if set true (boolean, default: false). See the "Incremental Loading" section below for details.
-- **incremental_columns**: Specifies the columns to use for incremental loading (array of strings). Supported column types are integers, strings, and timestamps.
+- **incremental**: Enables incremental loading if set true (boolean, default: false). See the "Incremental Loading" section below for details. **Note: `soql` and `incremental` cannot be used together.** When using incremental loading, use `select`/`where`/`limit` instead of `soql`.
+- **incremental_columns**: Specifies the columns to use for incremental loading (array of strings, required when `incremental` is true). Supported column types are integers, strings, and timestamps.
 - **last_record**: The values of the last record for incremental loading (array of objects). These values will be used to filter new records since the last run.
 
 ## Example Configurations
