@@ -1,10 +1,9 @@
 package org.embulk.input.soql;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.embulk.EmbulkTestRuntime;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
@@ -13,34 +12,31 @@ import org.embulk.spi.FileInputPlugin;
 import org.embulk.util.config.ConfigMapper;
 import org.embulk.util.config.ConfigMapperFactory;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
-public class TestSoqlFilePluginResume {
+public class TestSoqlFilePluginWithSoql {
     private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY =
             ConfigMapperFactory.builder().addDefaultModules().build();
-
-    @Rule public EmbulkTestRuntime runtime = new EmbulkTestRuntime();
+    private static final ConfigMapper CONFIG_MAPPER = CONFIG_MAPPER_FACTORY.createConfigMapper();
 
     private SoqlFilePlugin plugin;
 
     @Before
-    public void createResources() {
+    public void setup() {
         plugin = new SoqlFilePlugin();
     }
 
     @Test
     public void testTransaction() {
-        final ConfigDiff configDiff = plugin.transaction(config(), new TestControl());
-        assertEquals(configDiff.get(String.class, "object"), "Account");
+        ConfigDiff configDiff = plugin.transaction(config(), new TestControl());
+        assertTrue(configDiff.isEmpty());
     }
 
     @Test
     public void testResume() {
-        final ConfigMapper configMapper = CONFIG_MAPPER_FACTORY.createConfigMapper();
-        final PluginTask task = configMapper.map(config(), PluginTask.class);
-        final ConfigDiff configDiff = plugin.resume(task.toTaskSource(), 0, new TestControl());
-        assertEquals(configDiff.get(String.class, "object"), "Account");
+        PluginTask task = CONFIG_MAPPER.map(config(), PluginTask.class);
+        ConfigDiff configDiff = plugin.resume(task.toTaskSource(), 0, new TestControl());
+        assertTrue(configDiff.isEmpty());
     }
 
     private ConfigSource config() {

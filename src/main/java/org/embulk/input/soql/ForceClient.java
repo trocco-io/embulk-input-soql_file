@@ -8,13 +8,15 @@ import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.OperationEnum;
+import com.sforce.soap.partner.DescribeSObjectResult;
+import com.sforce.soap.partner.Field;
+import com.sforce.soap.partner.FieldType;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
-import com.sforce.ws.ConnectorConfig;
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -33,18 +35,25 @@ public class ForceClient {
     private static final long PERIOD = 5;
     private static final int BATCH_STATUS_CHECK_INTERVAL = 10000;
 
+    private ForceConnector forceConnector;
     private BulkConnection bulkConnection;
     private JobInfo jobInfo;
     private BatchInfo batchInfo;
 
-    private final Map<AuthMethod, ConnectorConfigCreater> connectorConfigCreaters = new HashMap<>();
-
     public ForceClient(PluginTask pluginTask) throws AsyncApiException, ConnectionException {
-        setConnectorConfigCreaters(pluginTask);
-        ConnectorConfigCreater connectorConfigCreater =
-                connectorConfigCreaters.get(pluginTask.getAuthMethod());
-        ConnectorConfig connectorConfig = connectorConfigCreater.createConnectorConfig();
-        bulkConnection = new BulkConnection(connectorConfig);
+        this.forceConnector = buildForceConnector(pluginTask);
+        this.bulkConnection = forceConnector.getBulkConnection();
+    }
+
+    private ForceConnector buildForceConnector(PluginTask pluginTask) {
+        switch (pluginTask.getAuthMethod()) {
+            case oauth:
+                return new OauthForceConnector(pluginTask);
+            case user_password:
+                return new UserPasswordForceConnector(pluginTask);
+            default:
+                throw new ConfigException("Unsupported auth_method: " + pluginTask.getAuthMethod());
+        }
     }
 
     public BulkConnection getBulkConnection() {
@@ -59,12 +68,12 @@ public class ForceClient {
         return this.batchInfo;
     }
 
-    public List<String> query(PluginTask pluginTask)
+    public List<String> query(PluginTask pluginTask, String soql)
             throws AsyncApiException, InterruptedException, ExecutionException {
         this.jobInfo =
                 createJobInfo(
                         pluginTask.getObject(), pluginTask.getIncludeDeletedOrArchivedRecords());
-        this.batchInfo = createBatchInfo(pluginTask.getSoql(), jobInfo);
+        this.batchInfo = createBatchInfo(soql, jobInfo);
 
         CompletableFuture<String[]> result = execBatch(jobInfo, batchInfo);
         return Arrays.asList(result.get());
@@ -109,7 +118,8 @@ public class ForceClient {
     }
 
     private BatchInfo createBatchInfo(String soql, JobInfo jobInfo) throws AsyncApiException {
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(soql.getBytes());
+        ByteArrayInputStream byteArrayInputStream =
+                new ByteArrayInputStream(soql.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         BatchInfo batchInfo = bulkConnection.createBatchFromStream(jobInfo, byteArrayInputStream);
         logger.info("batch_id is {}, job_id is {}", batchInfo.getId(), batchInfo.getJobId());
         return batchInfo;
@@ -132,9 +142,39 @@ public class ForceClient {
         return jobInfo;
     }
 
-    private void setConnectorConfigCreaters(PluginTask pluginTask) {
-        connectorConfigCreaters.put(AuthMethod.oauth, new OauthConnectorConfigCreater(pluginTask));
-        connectorConfigCreaters.put(
-                AuthMethod.user_password, new UserPasswordConnectorConfigCreater(pluginTask));
+    public List<String> describeObjectFieldNames(String object) throws ConnectionException {
+        PartnerConnection partnerConnection = forceConnector.getPartnerConnection();
+        DescribeSObjectResult result = partnerConnection.describeSObject(object);
+        Field[] fields = result.getFields();
+        if (fields == null) {
+            throw new ConfigException("No fields found in object: " + object);
+        }
+        List<String> fieldNames = new ArrayList<>();
+        // Bulk API does not support some data types:
+        // * binary type - base64
+        // * complex type - address, location, complexvalue
+        //
+        // see also:
+        // https://help.salesforce.com/s/articleView?id=000382669&type=1
+        // https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/field_types.htm
+        // https://javadoc.io/doc/com.force.api/force-partner-api/50.0.0/com/sforce/soap/partner/FieldType.html
+        List<FieldType> unsupportedTypes =
+                Arrays.asList(
+                        FieldType.address,
+                        FieldType.base64,
+                        FieldType.complexvalue,
+                        FieldType.location);
+        for (Field field : fields) {
+            if (!unsupportedTypes.contains(field.getType())) {
+                fieldNames.add(field.getName());
+            }
+        }
+        if (fieldNames.isEmpty()) {
+            throw new ConfigException(
+                    "No supported fields found in object: "
+                            + object
+                            + ". All fields may be of unsupported types (address, base64, complexvalue, location).");
+        }
+        return fieldNames;
     }
 }

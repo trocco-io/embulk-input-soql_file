@@ -1,10 +1,10 @@
 package org.embulk.input.soql;
 
+import java.util.List;
 import java.util.Optional;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.config.Task;
-import org.embulk.util.config.units.SchemaConfig;
 
 interface PluginTask extends Task {
     @Config("auth_method")
@@ -47,9 +47,30 @@ interface PluginTask extends Task {
     boolean getIncludeDeletedOrArchivedRecords();
 
     @Config("soql")
-    String getSoql();
+    @ConfigDefault("null")
+    Optional<String> getSoql();
 
-    @Config("columns")
+    @Config("select")
+    @ConfigDefault("null")
+    Optional<String> getSelect();
+
+    @Config("where")
+    @ConfigDefault("null")
+    Optional<String> getWhere();
+
+    @Config("limit")
+    @ConfigDefault("null")
+    Optional<Integer> getLimit();
+
+    @Config("incremental")
+    @ConfigDefault("false")
+    boolean getIncremental();
+
+    @Config("incremental_columns")
     @ConfigDefault("[]")
-    SchemaConfig getColumns();
+    List<String> getIncrementalColumns();
+
+    @Config("last_record")
+    @ConfigDefault("null")
+    Optional<List<String>> getLastRecord();
 }

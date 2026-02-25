@@ -17,7 +17,7 @@ public class BatchExecutor implements Runnable {
 
     private CompletableFuture<String[]> result = new CompletableFuture<>();
     private BulkConnection bulkConnection;
-    private BatchInfo batchInfo;
+    private volatile BatchInfo batchInfo;
 
     public BatchExecutor(BulkConnection bulkConnection, BatchInfo batchInfo) {
         this.bulkConnection = bulkConnection;
