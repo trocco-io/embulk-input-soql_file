@@ -1,37 +1,23 @@
-name: main
-
+name: Pull Request
 on:
-  push:
-    branches:
-      - 'master'
-    tags:
-      - '*'
+  workflow_dispatch:
   pull_request:
     branches:
-      - 'master'
-    types: [opened, synchronize]
-  pull_request_target:
-    branches:
-      - 'master'
-    types: [labeled]
-
+      - master
+    types:
+      - opened
+      - synchronize
 jobs:
   test:
-    name: test
+    name: Test
     runs-on: ubuntu-latest
-    if: >
-      ${{
-        github.event_name == 'pull_request' ||
-        (github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'safe to test')) ||
-        startsWith(github.ref, 'refs/tags/')
-      }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 1.8
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
           java-version: 8
+          distribution: "zulu"
       - uses: actions/cache@v4
         with:
           path: |
@@ -44,25 +30,19 @@ jobs:
         run: ./gradlew spotlessCheck
       - name: Test
         run: ./gradlew test
-  build:
-    name: Build + Publish
+  pre-release:
+    name: Pre-release
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
-    needs: [ test ]
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.ref, 'refs/tags/') }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Ruby 2.7
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 2.7
       - name: Set up JDK 1.8
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
           java-version: 8
+          distribution: "zulu"
       - uses: actions/cache@v4
         with:
           path: |
@@ -71,7 +51,7 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-      - name: push gem
+      - name: Push gem
         uses: trocco-io/push-gem-to-gpr-action@v2
         with:
           language: java
