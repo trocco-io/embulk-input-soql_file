@@ -109,10 +109,17 @@ public class SoqlFilePlugin implements FileInputPlugin {
             for (Iterator<String> it = recordKeyList.iterator(); it.hasNext(); ) {
                 Path csv = tempFileSpace.createTempFile().toPath();
                 csvFilePaths.add(csv);
+                NullByteFilterInputStream filtered;
                 try (InputStream input =
                         bulkConnection.getQueryResultStream(
                                 jobInfo.getId(), batchInfo.getId(), it.next())) {
-                    Files.copy(input, csv, REPLACE_EXISTING);
+                    filtered = new NullByteFilterInputStream(input);
+                    Files.copy(filtered, csv, REPLACE_EXISTING);
+                }
+                if (filtered.hasDetectedNullBytes()) {
+                    logger.warn(
+                            "Null bytes (0x00) were detected and removed from the Bulk API response CSV. "
+                                    + "The source Salesforce data may contain invalid characters.");
                 }
             }
         } catch (AsyncApiException e) {
