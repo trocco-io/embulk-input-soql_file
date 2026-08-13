@@ -36,16 +36,16 @@ dependencies {
     compile "org.embulk:embulk-util-config:0.3.4"
     compile "org.embulk:embulk-util-file:0.1.5"
 
-    // force-wsc 0.50.0 depends on jackson 2.10.3, but this plugin implementation
+    // force-wsc 68.0.0 depends on jackson 2.18.8, but this plugin implementation
     // seems to work with jackson 2.6.7 as well. Also, to support Embulk v0.9 in
     // the plugin, we need to use jackson 2.6.7, so we will force it here.
-    compile("com.force.api:force-wsc:50.0.0") {
+    compile("com.force.api:force-wsc:68.0.0") {
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
     }
     // force-partner-api depends on force-wsc, so we need to exclude jackson from it as well.
-    compile("com.force.api:force-partner-api:50.0.0") {
+    compile("com.force.api:force-partner-api:68.0.0") {
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
