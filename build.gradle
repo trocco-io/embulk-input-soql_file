@@ -36,12 +36,12 @@ dependencies {
     compile "org.embulk:embulk-util-config:0.3.4"
     compile "org.embulk:embulk-util-file:0.1.5"
 
-    // force-wsc/force-partner-api declare Jackson in their pom (2.18.8 as of 68.0.0),
-    // but this plugin uses only Bulk API v1 with CSV content type (com.sforce.async.*)
-    // and SOAP Partner API (com.sforce.soap.partner.*), both of which communicate via
-    // XML/CSV and do not exercise Jackson code paths at runtime. Exclude it so the lock
-    // keeps the proven jackson 2.6.7 set required by Embulk v0.9, where jackson-databind
-    // is loaded parent-first from embulk-core.
+    // force-wsc/force-partner-api declare Jackson in their pom (2.18.8 as of 68.0.0).
+    // BulkConnection initializes a static JsonFactory/ObjectMapper in its class initializer,
+    // so Jackson IS loaded at runtime. However, the Jackson API symbols used by force-wsc
+    // are identical between 50.0.0 and 68.0.0 and all exist in Jackson 2.6.7. Exclude the
+    // transitive Jackson and re-declare 2.6.7 explicitly so the lock keeps the version
+    // required by Embulk v0.9, where jackson-databind is loaded parent-first from embulk-core.
     compile("com.force.api:force-wsc:68.0.0") {
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
