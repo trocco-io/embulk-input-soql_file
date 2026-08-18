@@ -18,6 +18,7 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
   - **password**: Login password for Salesforce (string)
   - **security_token**: Salesforce security token (string)
   - **auth_end_point**: The authentication endpoint URL (string, default: `https://login.salesforce.com/services/Soap/u/`)
+  - Note: `user_password` relies on the SOAP `login()` call, which is not available with API version 65.0 or later (it fails with `UNSUPPORTED_API_VERSION`). Set `api_version` to `64.0` or lower when using this auth method. Salesforce plans to retire SOAP `login()` entirely around Summer '27, so consider migrating to `oauth`. See the [Salesforce release update](https://help.salesforce.com/s/articleView?id=release-notes.rn_api_upcoming_retirement_258rn.htm&language=en_US&release=258&type=5).
 - Using OAuth access token:
   - **access_token**: OAuth access token (string)
   - **instance_url**: The instance URL for Salesforce (string)
