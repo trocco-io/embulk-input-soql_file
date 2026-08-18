@@ -22,7 +22,7 @@ This input plugin for Embulk loads records from Salesforce using the Bulk API.
 - Using OAuth access token:
   - **access_token**: OAuth access token (string)
   - **instance_url**: The instance URL for Salesforce (string)
-- **api_version**: Salesforce API version to use (string, default: 67.0)
+- **api_version**: Salesforce API version to use (string, default: 64.0)
 - **object**: The name of the Salesforce object to query (string, required)
 - **include_deleted_or_archived_records**: If set true, includes deleted or archived records (boolean, default: false)
 - If you write SOQL directly,

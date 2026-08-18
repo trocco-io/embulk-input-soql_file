@@ -105,9 +105,9 @@ public class TestSoqlFilePluginValidation {
         plugin.transaction(config, new NoOpControl());
     }
 
-    @Test(expected = ConfigException.class)
+    @Test
     public void testTransactionWithUserPasswordAndDefaultApiVersion() {
-        // The default api_version (67.0) is not usable with user_password auth.
+        // The default api_version (64.0) is usable with user_password auth.
         ConfigSource config =
                 CONFIG_MAPPER_FACTORY
                         .newConfigSource()
