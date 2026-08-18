@@ -127,7 +127,7 @@ public class TestSoqlFilePluginOpen {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 
@@ -146,7 +146,7 @@ public class TestSoqlFilePluginOpen {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 
@@ -165,7 +165,7 @@ public class TestSoqlFilePluginOpen {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 
@@ -183,7 +183,7 @@ public class TestSoqlFilePluginOpen {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 }

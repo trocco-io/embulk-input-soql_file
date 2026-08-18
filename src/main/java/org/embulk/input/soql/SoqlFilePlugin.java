@@ -111,6 +111,9 @@ public class SoqlFilePlugin implements FileInputPlugin {
     @Override
     public TransactionalFileInput open(TaskSource taskSource, int taskIndex) {
         final PluginTask pluginTask = TASK_MAPPER.map(taskSource, PluginTask.class);
+        // Validate before creating ForceClient, whose constructor connects to Salesforce.
+        // This covers executors that call open() without transaction() in the same process.
+        validateConfig(pluginTask);
 
         List<Path> csvFilePaths;
         JobInfo jobInfo = null;
