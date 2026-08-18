@@ -87,6 +87,7 @@ public class TestSoqlFilePluginWithIncremental {
         ConfigSource configWithLastRecord =
                 CONFIG_MAPPER_FACTORY
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("select", "Id,Name,Timestamp")
                         .set("incremental", true)
@@ -114,6 +115,7 @@ public class TestSoqlFilePluginWithIncremental {
         ConfigSource configWithLastRecord =
                 CONFIG_MAPPER_FACTORY
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("select", "Id,Name,Timestamp")
                         .set("incremental", true)
@@ -143,6 +145,7 @@ public class TestSoqlFilePluginWithIncremental {
     private ConfigSource config() {
         return CONFIG_MAPPER_FACTORY
                 .newConfigSource()
+                .set("auth_method", "oauth")
                 .set("object", "Account")
                 .set("select", "Id,Name,Timestamp")
                 .set("incremental", true)

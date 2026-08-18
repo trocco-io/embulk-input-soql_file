@@ -42,6 +42,7 @@ public class TestCsvFileInput {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("select", "Id,Name,Timestamp")
                         .set("incremental", true)
@@ -106,6 +107,7 @@ public class TestCsvFileInput {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("soql", "SELECT Id,Name FROM Account");
         PluginTask task = CONFIG_MAPPER.map(config, PluginTask.class);
@@ -126,6 +128,7 @@ public class TestCsvFileInput {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("select", "Id,Name,Timestamp")
                         .set("incremental", true)
