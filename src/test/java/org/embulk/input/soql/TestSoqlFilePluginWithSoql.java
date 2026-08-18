@@ -42,6 +42,7 @@ public class TestSoqlFilePluginWithSoql {
     private ConfigSource config() {
         return CONFIG_MAPPER_FACTORY
                 .newConfigSource()
+                .set("auth_method", "oauth")
                 .set("object", "Account")
                 .set("soql", "SELECT Id,Name FROM Account");
     }

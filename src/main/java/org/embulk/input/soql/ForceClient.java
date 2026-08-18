@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.embulk.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,10 +155,19 @@ public class ForceClient {
         // * binary type - base64
         // * complex type - address, location, complexvalue
         //
+        // FieldType values added in force-partner-api 68.0.0 (json, floatarray, textarray)
+        // are intentionally NOT excluded:
+        // * json - verified queryable via Bulk API v1 CSV (ListViewEvent.Records etc. on an
+        //   Event Monitoring org, api_version 67.0); excluding it would silently drop data.
+        // * floatarray/textarray - Data Cloud vector index types. Not verified against a
+        //   real Data Cloud org; kept out of the exclusion list so that any incompatibility
+        //   surfaces as an explicit Bulk API batch error rather than silently dropping
+        //   columns. Add them here if they are confirmed to break Bulk API v1 queries.
+        //
         // see also:
         // https://help.salesforce.com/s/articleView?id=000382669&type=1
         // https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/field_types.htm
-        // https://javadoc.io/doc/com.force.api/force-partner-api/50.0.0/com/sforce/soap/partner/FieldType.html
+        // https://javadoc.io/doc/com.force.api/force-partner-api/68.0.0/com/sforce/soap/partner/FieldType.html
         List<FieldType> unsupportedTypes =
                 Arrays.asList(
                         FieldType.address,
@@ -173,7 +183,11 @@ public class ForceClient {
             throw new ConfigException(
                     "No supported fields found in object: "
                             + object
-                            + ". All fields may be of unsupported types (address, base64, complexvalue, location).");
+                            + ". All fields may be of unsupported types ("
+                            + unsupportedTypes.stream()
+                                    .map(FieldType::name)
+                                    .collect(Collectors.joining(", "))
+                            + ").");
         }
         return fieldNames;
     }

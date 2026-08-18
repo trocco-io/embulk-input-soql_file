@@ -61,6 +61,7 @@ public class TestSoqlFilePluginOpen {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("soql", "SELECT Id,Name FROM Account");
         final PluginTask pluginTask = CONFIG_MAPPER.map(config, PluginTask.class);
@@ -87,6 +88,7 @@ public class TestSoqlFilePluginOpen {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("incremental", true)
                         .set("incremental_columns", Arrays.asList("Id"));
@@ -114,14 +116,18 @@ public class TestSoqlFilePluginOpen {
 
     @Test
     public void testOpenWithoutSoqlAndIncrementalFalse() throws Exception {
-        ConfigSource config = runtime.getExec().newConfigSource().set("object", "Account");
+        ConfigSource config =
+                runtime.getExec()
+                        .newConfigSource()
+                        .set("auth_method", "oauth")
+                        .set("object", "Account");
         final PluginTask pluginTask = CONFIG_MAPPER.map(config, PluginTask.class);
 
         try {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 
@@ -130,6 +136,7 @@ public class TestSoqlFilePluginOpen {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("soql", "SELECT Id,Name FROM Account")
                         .set("select", "Id,Name,Timestamp");
@@ -139,7 +146,7 @@ public class TestSoqlFilePluginOpen {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 
@@ -148,6 +155,7 @@ public class TestSoqlFilePluginOpen {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("soql", "SELECT Id,Name FROM Account")
                         .set("incremental", true);
@@ -157,7 +165,7 @@ public class TestSoqlFilePluginOpen {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 
@@ -166,6 +174,7 @@ public class TestSoqlFilePluginOpen {
         ConfigSource config =
                 runtime.getExec()
                         .newConfigSource()
+                        .set("auth_method", "oauth")
                         .set("object", "Account")
                         .set("incremental", true);
         final PluginTask pluginTask = CONFIG_MAPPER.map(config, PluginTask.class);
@@ -174,7 +183,7 @@ public class TestSoqlFilePluginOpen {
             plugin.open(pluginTask.toTaskSource(), 0);
             fail("Expected exception was not thrown");
         } catch (Exception e) {
-            assertTrue(e.getCause() instanceof ConfigException);
+            assertTrue(e instanceof ConfigException);
         }
     }
 }

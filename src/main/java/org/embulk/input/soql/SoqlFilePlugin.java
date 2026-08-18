@@ -55,6 +55,15 @@ public class SoqlFilePlugin implements FileInputPlugin {
     }
 
     private void validateConfig(PluginTask task) {
+        if (task.getAuthMethod() == AuthMethod.user_password
+                && !isSoapLoginAvailable(task.getApiVersion())) {
+            throw new ConfigException(
+                    "auth_method: user_password cannot be used with api_version "
+                            + task.getApiVersion()
+                            + " because the Salesforce SOAP login() call is not available in API"
+                            + " version 65.0 or later. Set api_version to 64.0 or lower, or use"
+                            + " auth_method: oauth.");
+        }
         if (task.getSoql().isPresent() && task.getSelect().isPresent()) {
             throw new ConfigException("both soql and select are set");
         }
@@ -68,6 +77,17 @@ public class SoqlFilePlugin implements FileInputPlugin {
             if (task.getIncrementalColumns().isEmpty()) {
                 throw new ConfigException("incremental_columns must be set if incremental is true");
             }
+        }
+    }
+
+    // The SOAP login() call is not available in API version 65.0 or later.
+    // https://help.salesforce.com/s/articleView?id=release-notes.rn_api_upcoming_retirement_258rn.htm&language=en_US&release=258&type=5
+    private static boolean isSoapLoginAvailable(String apiVersion) {
+        try {
+            return Double.parseDouble(apiVersion) < 65.0;
+        } catch (NumberFormatException e) {
+            // Unknown version format; defer to Salesforce to report an error.
+            return true;
         }
     }
 
@@ -91,6 +111,9 @@ public class SoqlFilePlugin implements FileInputPlugin {
     @Override
     public TransactionalFileInput open(TaskSource taskSource, int taskIndex) {
         final PluginTask pluginTask = TASK_MAPPER.map(taskSource, PluginTask.class);
+        // Validate before creating ForceClient, whose constructor connects to Salesforce.
+        // This covers executors that call open() without transaction() in the same process.
+        validateConfig(pluginTask);
 
         List<Path> csvFilePaths;
         JobInfo jobInfo = null;

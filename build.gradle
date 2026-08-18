@@ -29,6 +29,7 @@ targetCompatibility = 1.8
 
 dependencies {
     def embulkVersion = "0.10.43"
+    def forceApiVersion = "68.0.0"
 
     compileOnly "org.embulk:embulk-api:${embulkVersion}"
     compileOnly "org.embulk:embulk-spi:${embulkVersion}"
@@ -36,16 +37,19 @@ dependencies {
     compile "org.embulk:embulk-util-config:0.3.4"
     compile "org.embulk:embulk-util-file:0.1.5"
 
-    // force-wsc 0.50.0 depends on jackson 2.10.3, but this plugin implementation
-    // seems to work with jackson 2.6.7 as well. Also, to support Embulk v0.9 in
-    // the plugin, we need to use jackson 2.6.7, so we will force it here.
-    compile("com.force.api:force-wsc:50.0.0") {
+    // force-wsc/force-partner-api declare Jackson in their pom (2.18.8 as of 68.0.0).
+    // BulkConnection initializes a static JsonFactory/ObjectMapper in its class initializer,
+    // so Jackson IS loaded at runtime. However, the Jackson API symbols used by force-wsc
+    // are identical between 50.0.0 and 68.0.0 and all exist in Jackson 2.6.7. Exclude the
+    // transitive Jackson and re-declare 2.6.7 explicitly so the lock keeps the version
+    // required by Embulk v0.9, where jackson-databind is loaded parent-first from embulk-core.
+    compile("com.force.api:force-wsc:${forceApiVersion}") {
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
     }
     // force-partner-api depends on force-wsc, so we need to exclude jackson from it as well.
-    compile("com.force.api:force-partner-api:50.0.0") {
+    compile("com.force.api:force-partner-api:${forceApiVersion}") {
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"

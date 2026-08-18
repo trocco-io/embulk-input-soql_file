@@ -5,13 +5,13 @@ com.fasterxml.jackson.core:jackson-annotations:2.6.7
 com.fasterxml.jackson.core:jackson-core:2.6.7
 com.fasterxml.jackson.core:jackson-databind:2.6.7.5
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7
-com.force.api:force-partner-api:50.0.0
-com.force.api:force-wsc:50.0.0
-commons-beanutils:commons-beanutils:1.9.4
+com.force.api:force-partner-api:68.0.0
+com.force.api:force-wsc:68.0.0
+commons-beanutils:commons-beanutils:1.11.0
 commons-codec:commons-codec:1.16.1
 commons-collections:commons-collections:3.2.2
 commons-io:commons-io:2.16.1
-commons-logging:commons-logging:1.2
+commons-logging:commons-logging:1.3.5
 javax.validation:validation-api:1.1.0.Final
 org.antlr:ST4:4.3
 org.antlr:antlr-runtime:3.5.2
