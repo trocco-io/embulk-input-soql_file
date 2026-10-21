@@ -4,16 +4,20 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sforce.async.AsyncApiException;
+import com.sforce.async.AsyncExceptionCode;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
 import com.sforce.ws.ConnectionException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigSource;
@@ -36,6 +40,21 @@ public class SoqlFilePlugin implements FileInputPlugin {
             ConfigMapperFactory.builder().addDefaultModules().build();
     private static final ConfigMapper CONFIG_MAPPER = CONFIG_MAPPER_FACTORY.createConfigMapper();
     private static final TaskMapper TASK_MAPPER = CONFIG_MAPPER_FACTORY.createTaskMapper();
+
+    // Bulk API errors that are not caused by the configuration and may succeed on another attempt.
+    // force-wsc reports client-side failures such as a connection reset as ClientInputError, and
+    // may drop the original IOException (e.g. "Server error returned in unknown format" is thrown
+    // without a cause when the error response has no Content-Type), so classify by the code.
+    private static final Set<AsyncExceptionCode> TRANSIENT_ERROR_CODES =
+            Collections.unmodifiableSet(
+                    EnumSet.of(
+                            AsyncExceptionCode.ClientInputError,
+                            AsyncExceptionCode.InternalServerError,
+                            AsyncExceptionCode.Timeout,
+                            AsyncExceptionCode.TooManyLockFailure));
+
+    private static final int DOWNLOAD_RETRY_LIMIT = 3;
+    private static final long DOWNLOAD_RETRY_INITIAL_WAIT_MILLIS = 5_000L;
 
     @Override
     public ConfigDiff transaction(ConfigSource config, FileInputPlugin.Control control) {
@@ -129,24 +148,17 @@ public class SoqlFilePlugin implements FileInputPlugin {
 
             TempFileSpace tempFileSpace = Exec.getTempFileSpace();
             csvFilePaths = new ArrayList<>(recordKeyList.size());
-            for (Iterator<String> it = recordKeyList.iterator(); it.hasNext(); ) {
+            for (String resultId : recordKeyList) {
                 Path csv = tempFileSpace.createTempFile().toPath();
                 csvFilePaths.add(csv);
-                NullByteFilterInputStream filtered;
-                try (InputStream input =
-                        bulkConnection.getQueryResultStream(
-                                jobInfo.getId(), batchInfo.getId(), it.next())) {
-                    filtered = new NullByteFilterInputStream(input);
-                    Files.copy(filtered, csv, REPLACE_EXISTING);
-                }
-                if (filtered.hasDetectedNullBytes()) {
-                    logger.warn(
-                            "Null bytes (0x00) were detected and removed from the Bulk API response CSV. "
-                                    + "The source Salesforce data may contain invalid characters.");
-                }
+                downloadQueryResult(
+                        bulkConnection, jobInfo.getId(), batchInfo.getId(), resultId, csv);
             }
         } catch (AsyncApiException e) {
             logger.error(e.getMessage(), e);
+            if (isTransientError(e)) {
+                throw new RuntimeException(e);
+            }
             throw new ConfigException(e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -162,6 +174,58 @@ public class SoqlFilePlugin implements FileInputPlugin {
         }
 
         return new CsvFileInput(pluginTask, csvFilePaths);
+    }
+
+    // The batch has already completed and its results are kept on Salesforce, so downloading the
+    // same result again is safe. Retry only the download instead of failing the whole task.
+    private void downloadQueryResult(
+            BulkConnection bulkConnection, String jobId, String batchId, String resultId, Path csv)
+            throws AsyncApiException, IOException, InterruptedException {
+        for (int retryCount = 0; ; retryCount++) {
+            try {
+                NullByteFilterInputStream filtered;
+                try (InputStream input =
+                        bulkConnection.getQueryResultStream(jobId, batchId, resultId)) {
+                    filtered = new NullByteFilterInputStream(input);
+                    Files.copy(filtered, csv, REPLACE_EXISTING);
+                }
+                if (filtered.hasDetectedNullBytes()) {
+                    logger.warn(
+                            "Null bytes (0x00) were detected and removed from the Bulk API response CSV. "
+                                    + "The source Salesforce data may contain invalid characters.");
+                }
+                return;
+            } catch (AsyncApiException | IOException e) {
+                if (retryCount >= DOWNLOAD_RETRY_LIMIT || !isRetryableDownloadError(e)) {
+                    throw e;
+                }
+                long waitMillis = DOWNLOAD_RETRY_INITIAL_WAIT_MILLIS << retryCount;
+                logger.warn(
+                        "Failed to download query result. result_id={}. Retrying {}/{} after {} ms.",
+                        resultId,
+                        retryCount + 1,
+                        DOWNLOAD_RETRY_LIMIT,
+                        waitMillis,
+                        e);
+                sleep(waitMillis);
+            }
+        }
+    }
+
+    private static boolean isRetryableDownloadError(Exception e) {
+        if (e instanceof AsyncApiException) {
+            return isTransientError((AsyncApiException) e);
+        }
+        // IOException while reading the response body, e.g. a connection reset.
+        return true;
+    }
+
+    private static boolean isTransientError(AsyncApiException e) {
+        return TRANSIENT_ERROR_CODES.contains(e.getExceptionCode());
+    }
+
+    protected void sleep(long millis) throws InterruptedException {
+        Thread.sleep(millis);
     }
 
     protected ForceClient createForceClient(PluginTask task)
