@@ -11,6 +11,7 @@ import com.sforce.async.JobInfo;
 import com.sforce.ws.ConnectionException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -41,17 +42,19 @@ public class SoqlFilePlugin implements FileInputPlugin {
     private static final ConfigMapper CONFIG_MAPPER = CONFIG_MAPPER_FACTORY.createConfigMapper();
     private static final TaskMapper TASK_MAPPER = CONFIG_MAPPER_FACTORY.createTaskMapper();
 
-    // Bulk API errors that are not caused by the configuration and may succeed on another attempt.
-    // force-wsc reports client-side failures such as a connection reset as ClientInputError, and
-    // may drop the original IOException (e.g. "Server error returned in unknown format" is thrown
-    // without a cause when the error response has no Content-Type), so classify by the code.
-    private static final Set<AsyncExceptionCode> TRANSIENT_ERROR_CODES =
+    // Errors returned by Salesforce that are not caused by the configuration and may succeed on
+    // another attempt.
+    private static final Set<AsyncExceptionCode> TRANSIENT_SERVER_ERROR_CODES =
             Collections.unmodifiableSet(
                     EnumSet.of(
-                            AsyncExceptionCode.ClientInputError,
                             AsyncExceptionCode.InternalServerError,
                             AsyncExceptionCode.Timeout,
                             AsyncExceptionCode.TooManyLockFailure));
+
+    // force-wsc throws ClientInputError with this message and without a cause when an error
+    // response has an unknown Content-Type, e.g. when the connection is reset before a response.
+    private static final String UNKNOWN_FORMAT_ERROR_MESSAGE =
+            "Server error returned in unknown format";
 
     private static final int DOWNLOAD_RETRY_LIMIT = 3;
     private static final long DOWNLOAD_RETRY_INITIAL_WAIT_MILLIS = 5_000L;
@@ -221,7 +224,21 @@ public class SoqlFilePlugin implements FileInputPlugin {
     }
 
     private static boolean isTransientError(AsyncApiException e) {
-        return TRANSIENT_ERROR_CODES.contains(e.getExceptionCode());
+        if (e.getExceptionCode() == AsyncExceptionCode.ClientInputError) {
+            return isClientSideIoFailure(e);
+        }
+        return TRANSIENT_SERVER_ERROR_CODES.contains(e.getExceptionCode());
+    }
+
+    // Salesforce also returns ClientInputError for a wrong request, which fails again on retry.
+    // Treat it as transient only when force-wsc raised it locally for an I/O failure.
+    private static boolean isClientSideIoFailure(AsyncApiException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof IOException) {
+            // A malformed URL comes from the configuration (instance_url), not from the network.
+            return !(cause instanceof MalformedURLException);
+        }
+        return cause == null && UNKNOWN_FORMAT_ERROR_MESSAGE.equals(e.getExceptionMessage());
     }
 
     protected void sleep(long millis) throws InterruptedException {

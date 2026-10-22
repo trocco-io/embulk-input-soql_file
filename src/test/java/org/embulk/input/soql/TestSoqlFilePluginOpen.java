@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -291,13 +292,45 @@ public class TestSoqlFilePluginOpen {
     }
 
     @Test
+    public void testOpenRetriesDownloadOnTransientServerError() throws Exception {
+        final PluginTask pluginTask = soqlTaskWithSingleResult();
+        when(bulkConnection.getQueryResultStream("jobId", "batchId", "result1"))
+                .thenThrow(errorReturnedBySalesforce(AsyncExceptionCode.InternalServerError))
+                .thenReturn(csvStream(CSV));
+
+        TransactionalFileInput result = plugin.open(pluginTask.toTaskSource(), 0);
+
+        assertEquals(CSV, readAll(result));
+        verify(bulkConnection, times(2)).getQueryResultStream("jobId", "batchId", "result1");
+    }
+
+    @Test
+    public void testOpenDoesNotRetryDownloadOnClientInputErrorReturnedBySalesforce()
+            throws Exception {
+        final PluginTask pluginTask = soqlTaskWithSingleResult();
+        when(bulkConnection.getQueryResultStream("jobId", "batchId", "result1"))
+                .thenThrow(errorReturnedBySalesforce(AsyncExceptionCode.ClientInputError));
+
+        try {
+            plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
+        } catch (Exception e) {
+            assertTrue(e instanceof ConfigException);
+        }
+        verify(bulkConnection, times(1)).getQueryResultStream("jobId", "batchId", "result1");
+        assertTrue(sleptMillis.isEmpty());
+    }
+
+    @Test
     public void testOpenThrowsRetryableExceptionWhenQueryFailsWithTransientError()
             throws Exception {
         final PluginTask pluginTask = soqlTask();
         when(forceClient.query(any(PluginTask.class), anyString()))
                 .thenThrow(
                         new AsyncApiException(
-                                "Failed to create job ", AsyncExceptionCode.ClientInputError));
+                                "Failed to create job ",
+                                AsyncExceptionCode.ClientInputError,
+                                new SSLException("Connection reset")));
 
         try {
             plugin.open(pluginTask.toTaskSource(), 0);
@@ -305,6 +338,24 @@ public class TestSoqlFilePluginOpen {
         } catch (Exception e) {
             assertFalse(e instanceof ConfigException);
             assertTrue(e.getCause() instanceof AsyncApiException);
+        }
+    }
+
+    @Test
+    public void testOpenThrowsConfigExceptionWhenQueryFailsWithMalformedUrl() throws Exception {
+        final PluginTask pluginTask = soqlTask();
+        when(forceClient.query(any(PluginTask.class), anyString()))
+                .thenThrow(
+                        new AsyncApiException(
+                                "Failed to create job ",
+                                AsyncExceptionCode.ClientInputError,
+                                new MalformedURLException("no protocol")));
+
+        try {
+            plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
+        } catch (Exception e) {
+            assertTrue(e instanceof ConfigException);
         }
     }
 
@@ -321,6 +372,14 @@ public class TestSoqlFilePluginOpen {
         } catch (Exception e) {
             assertTrue(e instanceof ConfigException);
         }
+    }
+
+    // Built the same way as force-wsc builds an exception from an error response body.
+    private static AsyncApiException errorReturnedBySalesforce(AsyncExceptionCode code) {
+        AsyncApiException e = new AsyncApiException();
+        e.setExceptionCode(code);
+        e.setExceptionMessage("Returned by Salesforce");
+        return e;
     }
 
     private PluginTask soqlTask() {
