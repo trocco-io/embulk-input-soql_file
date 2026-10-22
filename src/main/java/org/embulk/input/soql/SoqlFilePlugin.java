@@ -12,13 +12,16 @@ import com.sforce.ws.ConnectionException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import javax.net.ssl.SSLHandshakeException;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigSource;
@@ -53,8 +56,22 @@ public class SoqlFilePlugin implements FileInputPlugin {
 
     // force-wsc throws ClientInputError with this message and without a cause when an error
     // response has an unknown Content-Type, e.g. when the connection is reset before a response.
+    // This is a heuristic: an HTML or plain-text error page (e.g. from a proxy) also has this
+    // message and may fail again, but force-wsc gives no other signal to tell them apart.
     private static final String UNKNOWN_FORMAT_ERROR_MESSAGE =
             "Server error returned in unknown format";
+
+    // I/O failures that come from the configuration or the environment, such as a wrong
+    // instance_url or a certificate problem, and fail again on retry. A DNS lookup can also fail
+    // briefly, but a wrong host is the more likely cause, and these were reported as configuration
+    // errors before. ConnectException stays transient because a refused or timed-out connection
+    // is often temporary.
+    private static final List<Class<? extends IOException>> NON_TRANSIENT_IO_FAILURES =
+            Collections.unmodifiableList(
+                    Arrays.asList(
+                            MalformedURLException.class,
+                            UnknownHostException.class,
+                            SSLHandshakeException.class));
 
     private static final int DOWNLOAD_RETRY_LIMIT = 3;
     private static final long DOWNLOAD_RETRY_INITIAL_WAIT_MILLIS = 5_000L;
@@ -163,6 +180,11 @@ public class SoqlFilePlugin implements FileInputPlugin {
                 throw new RuntimeException(e);
             }
             throw new ConfigException(e);
+        } catch (InterruptedException e) {
+            // Keep the interrupt visible to the executor, e.g. while waiting between retries.
+            Thread.currentThread().interrupt();
+            logger.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -235,8 +257,7 @@ public class SoqlFilePlugin implements FileInputPlugin {
     private static boolean isClientSideIoFailure(AsyncApiException e) {
         Throwable cause = e.getCause();
         if (cause instanceof IOException) {
-            // A malformed URL comes from the configuration (instance_url), not from the network.
-            return !(cause instanceof MalformedURLException);
+            return NON_TRANSIENT_IO_FAILURES.stream().noneMatch(type -> type.isInstance(cause));
         }
         return cause == null && UNKNOWN_FORMAT_ERROR_MESSAGE.equals(e.getExceptionMessage());
     }

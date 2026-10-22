@@ -15,15 +15,18 @@ import com.sforce.async.JobInfo;
 import com.sforce.ws.ConnectionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigSource;
@@ -292,16 +295,103 @@ public class TestSoqlFilePluginOpen {
     }
 
     @Test
-    public void testOpenRetriesDownloadOnTransientServerError() throws Exception {
+    public void testOpenRetriesDownloadOnInternalServerError() throws Exception {
+        assertDownloadRetriedOn(errorReturnedBySalesforce(AsyncExceptionCode.InternalServerError));
+    }
+
+    @Test
+    public void testOpenRetriesDownloadOnTimeout() throws Exception {
+        assertDownloadRetriedOn(errorReturnedBySalesforce(AsyncExceptionCode.Timeout));
+    }
+
+    @Test
+    public void testOpenRetriesDownloadOnTooManyLockFailure() throws Exception {
+        assertDownloadRetriedOn(errorReturnedBySalesforce(AsyncExceptionCode.TooManyLockFailure));
+    }
+
+    @Test
+    public void testOpenRetriesDownloadOnClientInputErrorCausedByIoFailure() throws Exception {
+        // force-wsc wraps an IOException from doHttpGet, e.g. while reading the gzip header.
+        assertDownloadRetriedOn(
+                new AsyncApiException(
+                        "Failed to get result ",
+                        AsyncExceptionCode.ClientInputError,
+                        new EOFException("Unexpected end of ZLIB input stream")));
+    }
+
+    @Test
+    public void testOpenDoesNotRetryDownloadOnSslHandshakeFailure() throws Exception {
         final PluginTask pluginTask = soqlTaskWithSingleResult();
         when(bulkConnection.getQueryResultStream("jobId", "batchId", "result1"))
-                .thenThrow(errorReturnedBySalesforce(AsyncExceptionCode.InternalServerError))
+                .thenThrow(
+                        new AsyncApiException(
+                                "Failed to get result ",
+                                AsyncExceptionCode.ClientInputError,
+                                new SSLHandshakeException("PKIX path building failed")));
+
+        try {
+            plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
+        } catch (Exception e) {
+            assertTrue(e instanceof ConfigException);
+        }
+        verify(bulkConnection, times(1)).getQueryResultStream("jobId", "batchId", "result1");
+        assertTrue(sleptMillis.isEmpty());
+    }
+
+    @Test
+    public void testOpenRetriesEachResultIndependently() throws Exception {
+        final PluginTask pluginTask = soqlTask();
+        when(forceClient.query(any(PluginTask.class), anyString()))
+                .thenReturn(Arrays.asList("result1", "result2"));
+        when(jobInfo.getId()).thenReturn("jobId");
+        when(batchInfo.getId()).thenReturn("batchId");
+        String csv2 = "Id,Name\n" + "3,Carol\n";
+        when(bulkConnection.getQueryResultStream("jobId", "batchId", "result1"))
+                .thenThrow(unknownFormatError())
                 .thenReturn(csvStream(CSV));
+        when(bulkConnection.getQueryResultStream("jobId", "batchId", "result2"))
+                .thenThrow(unknownFormatError())
+                .thenReturn(csvStream(csv2));
 
         TransactionalFileInput result = plugin.open(pluginTask.toTaskSource(), 0);
 
-        assertEquals(CSV, readAll(result));
+        assertEquals(CSV + csv2, readAll(result));
         verify(bulkConnection, times(2)).getQueryResultStream("jobId", "batchId", "result1");
+        verify(bulkConnection, times(2)).getQueryResultStream("jobId", "batchId", "result2");
+        // The retry count starts over for each result.
+        assertEquals(Arrays.asList(5_000L, 5_000L), sleptMillis);
+    }
+
+    @Test
+    public void testOpenRestoresInterruptFlagWhenInterruptedWhileWaiting() throws Exception {
+        SoqlFilePlugin interruptedPlugin =
+                new SoqlFilePlugin() {
+                    @Override
+                    protected ForceClient createForceClient(PluginTask task) {
+                        return forceClient;
+                    }
+
+                    @Override
+                    protected void sleep(long millis) throws InterruptedException {
+                        throw new InterruptedException();
+                    }
+                };
+        final PluginTask pluginTask = soqlTaskWithSingleResult();
+        when(bulkConnection.getQueryResultStream("jobId", "batchId", "result1"))
+                .thenThrow(unknownFormatError());
+
+        Exception thrown = null;
+        try {
+            interruptedPlugin.open(pluginTask.toTaskSource(), 0);
+        } catch (Exception e) {
+            thrown = e;
+        }
+        // Thread.interrupted() also clears the flag so that it does not leak into other tests.
+        assertTrue(Thread.interrupted());
+        assertNotNull(thrown);
+        assertTrue(thrown.getCause() instanceof InterruptedException);
+        verify(bulkConnection).closeJob("jobId");
     }
 
     @Test
@@ -360,6 +450,24 @@ public class TestSoqlFilePluginOpen {
     }
 
     @Test
+    public void testOpenThrowsConfigExceptionWhenQueryFailsWithUnknownHost() throws Exception {
+        final PluginTask pluginTask = soqlTask();
+        when(forceClient.query(any(PluginTask.class), anyString()))
+                .thenThrow(
+                        new AsyncApiException(
+                                "Failed to create job ",
+                                AsyncExceptionCode.ClientInputError,
+                                new UnknownHostException("example.my.salesforc.com")));
+
+        try {
+            plugin.open(pluginTask.toTaskSource(), 0);
+            fail("Expected exception was not thrown");
+        } catch (Exception e) {
+            assertTrue(e instanceof ConfigException);
+        }
+    }
+
+    @Test
     public void testOpenThrowsConfigExceptionWhenQueryFailsWithNonTransientError()
             throws Exception {
         final PluginTask pluginTask = soqlTask();
@@ -372,6 +480,24 @@ public class TestSoqlFilePluginOpen {
         } catch (Exception e) {
             assertTrue(e instanceof ConfigException);
         }
+    }
+
+    private void assertDownloadRetriedOn(AsyncApiException error) throws Exception {
+        final PluginTask pluginTask = soqlTaskWithSingleResult();
+        when(bulkConnection.getQueryResultStream("jobId", "batchId", "result1"))
+                .thenThrow(error)
+                .thenReturn(csvStream(CSV));
+
+        TransactionalFileInput result = plugin.open(pluginTask.toTaskSource(), 0);
+
+        assertEquals(CSV, readAll(result));
+        verify(bulkConnection, times(2)).getQueryResultStream("jobId", "batchId", "result1");
+        assertEquals(Collections.singletonList(5_000L), sleptMillis);
+    }
+
+    private static AsyncApiException unknownFormatError() {
+        return new AsyncApiException(
+                "Server error returned in unknown format", AsyncExceptionCode.ClientInputError);
     }
 
     // Built the same way as force-wsc builds an exception from an error response body.
